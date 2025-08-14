@@ -6,137 +6,127 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Raiders of the Lost Letters</title>
 <style>
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
-    background: #f4e2c2;
-    margin: 0;
-    padding: 0 0 30px 0;
-    text-align: center;
-    color: #3b2a14;
+  :root{
+    --bg:#f4e2c2; --ink:#3b2a14; --accent:#d4af37; --panel:#f7e8c7;
+    --border:#8b4513; --trail:#7a4f21; --x:#a66a2a; --good:#1f8b45; --bad:#c0392b;
   }
-  h1 {
-    color: #8b4513;
-    text-shadow: 1px 1px #fff;
-    margin: 16px 0 6px;
+  *{box-sizing:border-box}
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif; }
+  header{ padding:16px 14px 6px; text-align:center; }
+  h1{ margin:0 0 4px; color:var(--border); text-shadow:1px 1px #fff; font-size:24px; }
+  .tag{ color:#6b5432; font-size:14px }
+  .wrap{ width:min(980px, 94%); margin:0 auto 20px; }
+
+  .grid{ display:grid; gap:10px; }
+  .panel{ background:var(--panel); border:2px solid var(--border); border-radius:14px; padding:12px; }
+
+  /* Textarea for pasting word lists */
+  textarea{
+    width:100%; min-height:120px; resize:vertical;
+    border:2px solid var(--border); border-radius:10px; padding:10px; font-size:15px; background:#fffdf5; color:#2a1d0e;
   }
-  .muted { color:#6b5432; font-size:14px; margin-bottom: 8px; }
-  #map-container {
-    position: relative;
-    width: min(960px, 92%);
-    height: 170px; /* Taller map to avoid clipping */
-    margin: 14px auto 10px;
-    background: linear-gradient(180deg,#d9c08c,#caae74);
-    border: 5px solid #8b4513;
-    border-radius: 16px;
-    overflow: hidden;
+
+  .controls{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  button{
+    padding:10px 14px; border:none; border-radius:10px; background:var(--accent); color:#1f1408; cursor:pointer; font-size:15px;
   }
-  /* Simple dashed trail */
-  #trail {
-    position:absolute; inset:0;
+  button.secondary{ background:#caa33a }
+  input[type="text"]{
+    width:100%; padding:10px 12px; border:2px solid var(--border); border-radius:10px; font-size:18px; background:#fffdf5;
   }
-  #x-marks {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    padding: 0 26px;
-    pointer-events: none;
-    font-size: 22px;
-    color: #7a4f21;
-    text-shadow: 0 1px 0 #f6e8c8;
+  .stats{ display:flex; flex-wrap:wrap; gap:8px; font-size:13px; color:#5a4123; }
+  .pill{ padding:6px 10px; background:#f9edcf; border:1px solid #d2b473; border-radius:999px; }
+
+  /* Treasure map */
+  .map-box{
+    position:relative; width:100%; height:220px;  /* TALLER so avatar doesn't get clipped */
+    background:linear-gradient(180deg,#e8d3a1,#d6b97b);
+    border:3px solid var(--border); border-radius:16px; overflow:hidden;
   }
-  #progress-character {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translate(-50%, -50%); /* keep centered vertically */
-    width: 64px;
-    height: 64px;
-    transition: left 0.45s ease-in-out, top 0.2s ease;
-    filter: drop-shadow(0 6px 6px rgba(0,0,0,.25));
-  }
-  /* Controls */
-  .controls { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin: 10px 0; }
-  button {
-    padding: 10px 14px;
-    font-size: 15px;
-    cursor: pointer;
-    background-color: #d4af37;
-    border: none;
-    border-radius: 8px;
-    color: #1f1408;
-  }
-  button.secondary{ background:#c59f2f; }
-  input[type="text"] {
-    font-size: 18px;
-    padding: 8px 10px;
-    width: min(640px, 92%);
-    margin-top: 6px;
-    border-radius: 8px;
-    border: 2px solid #caa86a;
-    outline: none;
-  }
-  #feedback { font-size: 16px; min-height: 22px; margin-top: 8px; }
-  .good { color:#1f8b45; }
-  .bad { color:#c0392b; }
-  .stats { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin: 6px 0 0; font-size:14px; color:#5a4123; }
-  .pill{ padding:4px 8px; border:1px solid #caa86a; border-radius:999px; background:#f7e8c7; }
-  .small{ font-size:13px; }
+  svg#map{ position:absolute; inset:0; }
+  #trail{ stroke:var(--trail); stroke-width:9; fill:none; stroke-linecap:round; stroke-dasharray:16 18; }
+
+  /* X marks are positioned along the path using absolute DIVs */
+  #xLayer{ position:absolute; inset:0; pointer-events:none; }
+  .x{ position:absolute; width:14px; height:14px; transform:translate(-50%,-50%) rotate(45deg); }
+  .x:before,.x:after{ content:""; position:absolute; left:50%; top:50%; width:2px; height:16px; background:var(--x); transform:translate(-50%,-50%) rotate(45deg) }
+  .x:after{ transform:translate(-50%,-50%) rotate(-45deg) }
+
+  /* Avatar placed as an absolutely positioned SVG inside the map box */
+  #avatar{ position:absolute; width:70px; height:70px; transform:translate(-50%,-50%); filter:drop-shadow(0 6px 6px rgba(0,0,0,.25)); }
+  .good{ color:var(--good); } .bad{ color:var(--bad); }
   .sr-only{ position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden; }
 </style>
 </head>
 <body>
-  <h1>Raiders of the Lost Letters</h1>
-  <div class="muted small">Each ❌ is a word. Correct = move forward. Wrong = step back. Finish when every word is spelled correctly.</div>
+  <header>
+    <h1>Raiders of the Lost Letters</h1>
+    <div class="tag">Paste your words, then spell them to reach the treasure. ❌ marks each word on the trail.</div>
+  </header>
 
-  <div id="map-container">
-    <!-- simple SVG curve as a dashed trail -->
-    <svg id="trail" viewBox="0 0 1000 220" preserveAspectRatio="none" aria-hidden="true">
-      <path d="M60,160 C150,60 260,200 340,120 S520,40 600,120 760,200 880,120"
-            stroke="#7a4f21" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="14 16"/>
-    </svg>
-    <div id="x-marks"></div>
-    <!-- Simple explorer avatar as inline SVG to avoid external images -->
-    <svg id="progress-character" viewBox="0 0 80 80" aria-hidden="true">
-      <!-- hat brim -->
-      <ellipse cx="40" cy="22" rx="26" ry="8" fill="#4a3926"/>
-      <!-- hat crown -->
-      <path d="M28 12 q12-8 24 0 l-4 14 h-16z" fill="#3a2c1e"/>
-      <!-- head -->
-      <circle cx="40" cy="32" r="10" fill="#f0c799"/>
-      <!-- body -->
-      <path d="M26 44 h28 l6 22 h-40z" fill="#5b3e24"/>
-      <rect x="36" y="44" width="8" height="8" fill="#d9d2c2"/>
-      <rect x="24" y="54" width="32" height="4" fill="#3b2a15"/>
-      <!-- satchel -->
-      <path d="M28 44 l24 22" stroke="#caa06a" stroke-width="4"/>
-    </svg>
-  </div>
+  <main class="wrap grid">
+    <!-- Word list panel -->
+    <section class="panel grid">
+      <label for="listBox"><strong>Word list</strong> (one per line or commas)</label>
+      <textarea id="listBox">because
+treasure
+jungle
+adventure
+map
+whisper
+rhythm
+friend
+school
+beautiful</textarea>
+      <div class="controls">
+        <button id="btnUseList">Use These Words (Shuffle)</button>
+        <button id="btnHuntAgain" class="secondary">Hunt Again (Shuffle)</button>
+      </div>
+    </section>
 
-  <div class="controls">
-    <button id="btnStart">Start / New List</button>
-    <button id="btnHuntAgain" class="secondary">Hunt Again</button>
-    <button id="btnHear" class="secondary">🔊 Hear Word</button>
-  </div>
+    <!-- Map -->
+    <section class="panel grid">
+      <div class="map-box">
+        <svg id="map" viewBox="0 0 1000 220" preserveAspectRatio="none" aria-hidden="true">
+          <path id="trail" d="M60,160 C150,60 260,200 340,120 S520,40 600,120 760,200 880,120" />
+        </svg>
+        <div id="xLayer"></div>
 
-  <label class="sr-only" for="word-input">Type the word</label>
-  <input id="word-input" type="text" placeholder="Type the word and press Enter" autocomplete="off" />
-  <div id="feedback"></div>
+        <!-- Avatar (explorer) -->
+        <svg id="avatar" viewBox="0 0 80 80" aria-hidden="true">
+          <ellipse cx="40" cy="22" rx="26" ry="8" fill="#4a3926"/>
+          <path d="M28 12 q12-8 24 0 l-4 14 h-16z" fill="#3a2c1e"/>
+          <circle cx="40" cy="32" r="10" fill="#f0c799"/>
+          <path d="M26 44 h28 l6 22 h-40z" fill="#5b3e24"/>
+          <rect x="36" y="44" width="8" height="8" fill="#d9d2c2"/>
+          <rect x="24" y="54" width="32" height="4" fill="#3b2a15"/>
+          <path d="M28 44 l24 22" stroke="#caa06a" stroke-width="4"/>
+        </svg>
+      </div>
 
-  <div class="stats">
-    <div class="pill">Words: <span id="statTotal">0</span></div>
-    <div class="pill">Mastered: <span id="statMastered">0</span></div>
-    <div class="pill">Correct: <span id="statCorrect">0</span></div>
-    <div class="pill">Wrong: <span id="statWrong">0</span></div>
-    <div class="pill">Repeats (score): <span id="statRepeats">0</span></div>
-    <div class="pill">Best: <span id="statBest">—</span></div>
-  </div>
+      <label class="sr-only" for="answer">Type the word</label>
+      <input id="answer" type="text" placeholder="Type the word and press Enter" autocomplete="off" />
+      <div id="feedback"></div>
+
+      <div class="stats">
+        <div class="pill">Words: <span id="statTotal">0</span></div>
+        <div class="pill">Mastered: <span id="statMastered">0</span></div>
+        <div class="pill">Correct: <span id="statCorrect">0</span></div>
+        <div class="pill">Wrong: <span id="statWrong">0</span></div>
+        <div class="pill">Repeats (score): <span id="statRepeats">0</span></div>
+        <div class="pill">Best: <span id="statBest">—</span></div>
+      </div>
+
+      <div class="controls">
+        <button id="btnHear" class="secondary">🔊 Hear Word</button>
+      </div>
+    </section>
+  </main>
 
 <script>
 (function(){
   const $ = (id)=>document.getElementById(id);
+  const normalize = s => s.toLowerCase().trim().replace(/[^a-z']/g,'');
 
   // Shuffle (Fisher-Yates)
   function shuffle(arr){
@@ -148,60 +138,64 @@
     return a;
   }
 
-  const normalize = s => s.toLowerCase().trim().replace(/[^a-z']/g,'');
   function speak(text){
     try{
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.rate = 0.95; u.pitch = 1.0; u.lang = 'en-US';
       window.speechSynthesis.speak(u);
-    }catch(e){ /* ignore if not supported */ }
+    }catch(e){ /* ignore if unsupported */ }
   }
 
-  // State
-  let originalList = [];        // strings
-  let queue = [];               // {raw, key, mastered:false}
-  let current = null;
+  // Map / path
+  let path, pathLength=1;
+  function initPath(){
+    path = document.getElementById('trail');
+    pathLength = path.getTotalLength ? path.getTotalLength() : 1000;
+  }
+  function setAvatarAtPercent(p){
+    p = Math.max(0, Math.min(1, p));
+    const d = p * pathLength;
+    const pt = path.getPointAtLength(d);
+    const av = $('avatar');
+    av.style.left = pt.x + 'px';
+    av.style.top  = pt.y + 'px';
+  }
+  function drawXMarks(n){
+    const layer = $('xLayer'); layer.innerHTML='';
+    if(n <= 0) return;
+    for(let i=1;i<=n;i++){
+      const p = i/n; // equal spacing along path
+      const d = p * pathLength;
+      const pt = path.getPointAtLength(d);
+      const x = document.createElement('div');
+      x.className = 'x';
+      x.style.left = pt.x + 'px';
+      x.style.top  = pt.y + 'px';
+      layer.appendChild(x);
+    }
+  }
+
+  // Game state
+  let baseList = []; // strings
+  let queue = [];    // [{raw,key,mastered:false}]
   let total = 0;
+  let current = null;
   let stats = {correct:0, wrong:0, attempts:0};
-  let positionIndex = 0;        // for map progress (0..total)
-  let lockPrompt = false;       // prevent double-speaking / overlapping
+  let stepIndex = 0; // 0..total, moves along path
+  let speakLock = false;
 
   function repeats(){ return Math.max(0, stats.attempts - total); }
 
-  function parseInputList(s){
-    const parts = s.split(/[,\n]+/).map(w=>w.trim()).filter(Boolean);
-    const seen = new Set();
-    const list = [];
+  function parseList(text){
+    const parts = text.split(/[,\n]+/).map(s=>s.trim()).filter(Boolean);
+    const seen = new Set(); const out=[];
     for(const raw of parts){
       const key = normalize(raw);
       if(!key || seen.has(key)) continue;
-      seen.add(key);
-      list.push(raw);
+      seen.add(key); out.push(raw);
     }
-    return list;
-  }
-
-  function setupXMarks(n){
-    const layer = $('x-marks');
-    layer.innerHTML = '';
-    if(n <= 0) return;
-    for(let i=0;i<n;i++){
-      const span = document.createElement('span');
-      span.textContent = '❌';
-      layer.appendChild(span);
-    }
-  }
-
-  function placeCharacterByProgress(idx){ // idx 0..total
-    const map = $('map-container');
-    const char = $('progress-character');
-    const w = map.clientWidth;
-    const charW = char.clientWidth || 64;
-    const steps = Math.max(1,total); // avoid div by zero
-    const step = (w - 52) / steps; // 52 padding to keep inside border
-    const left = 26 + (idx * step); // 26 left padding
-    char.style.left = left + 'px';
+    return out;
   }
 
   function updateStats(){
@@ -210,51 +204,41 @@
     $('statCorrect').textContent = stats.correct;
     $('statWrong').textContent = stats.wrong;
     $('statRepeats').textContent = repeats();
-  }
-
-  function startNewList(){
-    const input = prompt("Enter your spelling words (comma or new line separated):");
-    if(!input) return;
-    originalList = parseInputList(input);
-    if(originalList.length === 0){ alert("Please enter at least one word."); return; }
-    startRound(true);
-  }
-
-  function startRound(reshuffle){
-    // create queue of objects
-    const base = reshuffle ? shuffle(originalList) : originalList.slice();
-    queue = base.map(raw=>({raw, key:normalize(raw), mastered:false}));
-    total = queue.length;
-    stats = {correct:0, wrong:0, attempts:0};
-    positionIndex = 0;
-    current = null;
-    $('word-input').value='';
-    $('feedback').textContent='';
-    $('feedback').className='';
     const best = localStorage.getItem('treasure_best_repeats');
     $('statBest').textContent = (best===null ? '—' : best);
-    setupXMarks(total);
+  }
+
+  function startRound(reshuffle=true){
+    initPath();
+    const list = reshuffle ? shuffle(baseList) : baseList.slice();
+    queue = list.map(raw => ({raw, key:normalize(raw), mastered:false}));
+    total = queue.length;
+    stats = {correct:0, wrong:0, attempts:0};
+    stepIndex = 0;
+    $('answer').value = '';
+    $('feedback').textContent='';
+    $('feedback').className='';
+    drawXMarks(total);
     updateStats();
-    placeCharacterByProgress(0);
+    setAvatarAtPercent(0);
     next(true);
   }
 
-  function next(autoSpeak){
-    // consume already-mastered items
+  function next(autoSpeak=false){
     while(queue.length && queue[0].mastered) queue.shift();
     if(queue.length === 0){ return finish(); }
     current = queue[0];
-    if(autoSpeak && !lockPrompt){
-      lockPrompt = true;
+    if(autoSpeak && !speakLock){
+      speakLock = true;
       speak(current.raw);
-      setTimeout(()=>{ lockPrompt = false; }, 600); // brief lock to avoid overlaps
+      setTimeout(()=>{ speakLock=false; }, 500);
     }
-    $('word-input').focus();
+    $('answer').focus();
   }
 
   function submit(){
     if(!current) return;
-    const val = normalize($('word-input').value);
+    const val = normalize($('answer').value);
     if(!val) return;
     stats.attempts++;
 
@@ -262,67 +246,65 @@
       current.mastered = true;
       stats.correct++;
       $('feedback').textContent = `✅ Correct: ${current.raw}`;
-      $('feedback').className='good';
+      $('feedback').className = 'good';
 
-      // forward step toward treasure
-      positionIndex = Math.min(positionIndex + 1, total);
-      placeCharacterByProgress(positionIndex);
+      // progress forward one X
+      stepIndex = Math.min(total, stepIndex + 1);
+      setAvatarAtPercent(stepIndex/total);
 
-      // remove mastered from front
+      // remove mastered and continue
       queue.shift();
       updateStats();
-      $('word-input').value='';
-
-      // speak next word once
+      $('answer').value = '';
       next(true);
 
     } else {
       stats.wrong++;
       $('feedback').textContent = `❌ Oops. The word was “${current.raw}”. We'll try it again soon.`;
-      $('feedback').className='bad';
+      $('feedback').className = 'bad';
 
-      // back a step
-      positionIndex = Math.max(0, positionIndex - 1);
-      placeCharacterByProgress(positionIndex);
+      // move one step back
+      stepIndex = Math.max(0, stepIndex - 1);
+      setAvatarAtPercent(stepIndex/total);
 
-      // reinsert current a few spots later so it repeats
+      // reinsert a few later
       queue.shift();
       const insertAt = Math.min(3, queue.length);
       queue.splice(insertAt, 0, current);
 
       updateStats();
-      $('word-input').value='';
-
-      // IMPORTANT: do NOT speak the missed word again immediately.
-      // Only speak the new current word after we've moved on.
+      $('answer').value = '';
+      // Only speak the new current word once
       next(true);
     }
   }
 
   function finish(){
-    // All words mastered
-    placeCharacterByProgress(total);
+    setAvatarAtPercent(1);
     const score = repeats();
-    const key = 'treasure_best_repeats';
+    const key='treasure_best_repeats';
     const currBest = localStorage.getItem(key);
-    if (currBest === null || score < Number(currBest)) {
-      localStorage.setItem(key, String(score));
-    }
-    const best = localStorage.getItem(key);
-    $('statBest').textContent = best;
-    $('feedback').innerHTML = `🎉 You found the treasure! Repeats (score): <b>${score}</b>. Best: <b>${best}</b>.`;
+    if(currBest===null || score < Number(currBest)){ localStorage.setItem(key, String(score)); }
+    $('statBest').textContent = localStorage.getItem(key);
+    $('feedback').innerHTML = `🎉 You found the treasure! Repeats (score): <b>${score}</b>. Best: <b>${localStorage.getItem(key)}</b>.`;
   }
 
   // Events
-  $('btnStart').addEventListener('click', ()=>startNewList());
+  $('btnUseList').addEventListener('click', ()=>{
+    const text = $('listBox').value;
+    const parsed = parseList(text);
+    if(parsed.length === 0){ alert('Please enter at least one word.'); return; }
+    baseList = parsed;
+    startRound(true); // shuffle
+  });
   $('btnHuntAgain').addEventListener('click', ()=>{
-    if(originalList.length === 0){ startNewList(); }
-    else { startRound(true); } // reshuffle for a fresh hunt
+    if(baseList.length === 0){ alert('Paste a word list first.'); return; }
+    startRound(true);
   });
   $('btnHear').addEventListener('click', ()=>{ if(current) speak(current.raw); });
-  $('word-input').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ submit(); }});
+  $('answer').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ submit(); } });
 
-  // Initial best load
+  // Initialize best
   const best = localStorage.getItem('treasure_best_repeats');
   $('statBest').textContent = (best===null ? '—' : best);
 })();
