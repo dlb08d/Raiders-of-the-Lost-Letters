@@ -101,6 +101,17 @@
     100% { opacity: 0; transform: translate(-50%,-64%) scale(0.1); }
   }
 
+  /* Writing canvas (parchment style) */
+  .write-wrap{ background:#f7e8c7; border:2px dashed #8b6a3b; border-radius:12px; padding:8px; }
+  .write-toolbar{ display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+  #writeCanvas{ width:100%; height:180px; background:
+      radial-gradient(ellipse at top left, rgba(255,255,255,.6), rgba(255,255,255,0) 60%),
+      radial-gradient(ellipse at bottom right, rgba(0,0,0,.06), rgba(0,0,0,0) 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(0,0,0,.04) 29px, transparent 30px);
+    border:2px solid #8b6a3b; border-radius:10px; touch-action:none; /* required for pointer events on iOS */
+  }
+  .write-hidden{ display:none; }
+
   .good{ color:var(--good); } .bad{ color:var(--bad); }
   .sr-only{ position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden; }
 </style>
@@ -108,7 +119,7 @@
 <body>
   <header>
     <h1>Raiders of the Lost Letters</h1>
-    <div class="tag">Now with a Submit button. iOS alignment fix keeps the explorer on the trail and the chest visible.</div>
+    <div class="tag">Write it, then spell it! Optional practice canvas + “❌ Mark the Map” button for submissions.</div>
   </header>
 
   <main class="wrap grid">
@@ -209,8 +220,20 @@ beautiful</textarea>
       <div class="answer-row">
         <label class="sr-only" for="answer">Type the word</label>
         <input id="answer" type="text" placeholder="Type the word" autocomplete="off" />
-        <button id="btnSubmit">Submit</button>
+        <button id="btnMark">❌ Mark the Map</button>
       </div>
+
+      <!-- Writing Canvas (default visible) -->
+      <section id="writeSection" class="write-wrap">
+        <div class="write-toolbar">
+          <strong>✍️ Write It</strong>
+          <button id="btnToggleWrite" class="secondary">Hide</button>
+          <button id="btnUndo" class="secondary">Undo</button>
+          <button id="btnClear" class="secondary">Clear</button>
+        </div>
+        <canvas id="writeCanvas"></canvas>
+      </section>
+
       <div id="feedback"></div>
 
       <div class="stats">
@@ -224,6 +247,7 @@ beautiful</textarea>
 
       <div class="controls">
         <button id="btnHear" class="secondary">🔊 Hear Word</button>
+        <button id="btnWriteToggleTop" class="secondary">✍️ Write It</button>
       </div>
     </section>
   </main>
@@ -255,25 +279,46 @@ beautiful</textarea>
     o.type=type; o.frequency.value=f; g.gain.value=vol;
     o.connect(g); g.connect(ac.destination); o.start(); setTimeout(()=>o.stop(), d*1000);
   }
-  function noise(dur=0.12, vol=0.2){
+  function noise(dur=0.2, vol=0.2, loop=false){
     const ac = ctx();
-    const buffer = ac.createBuffer(1, ac.sampleRate*dur, ac.sampleRate);
+    const buffer = ac.createBuffer(1, Math.max(1, ac.sampleRate*dur), ac.sampleRate);
     const data = buffer.getChannelData(0);
-    for(let i=0;i<data.length;i++){ data[i] = (Math.random()*2-1) * Math.exp(-3*i/data.length); }
-    const src = ac.createBufferSource(); src.buffer = buffer;
+    for(let i=0;i<data.length;i++){ data[i] = (Math.random()*2-1); }
+    const src = ac.createBufferSource(); src.buffer = buffer; src.loop = loop;
+    const bp = ac.createBiquadFilter(); bp.type='highpass'; bp.frequency.value=1200; // scratchy feel
     const g = ac.createGain(); g.gain.value = vol;
-    src.connect(g); g.connect(ac.destination); src.start();
+    src.connect(bp); bp.connect(g); g.connect(ac.destination);
+    return {src, g};
   }
   const sfx = {
     coin(){ tone(900,.08,'square',.22); setTimeout(()=>tone(1350,.08,'square',.2),60); },
     whoosh(){ tone(220,.05,'sine',.12); setTimeout(()=>tone(440,.06,'sine',.14),60); setTimeout(()=>tone(660,.08,'sine',.16),120); },
-    drum(){ noise(.12,.22); setTimeout(()=>noise(.09,.18),120); },
+    drum(){ const {src,g}=noise(.12,.22,false); src.start(); setTimeout(()=>{ try{src.stop();}catch(e){}},120); },
     treasure(){
       const seq = [392,523,659,784,988,1175,1319];
       seq.forEach((f,i)=>setTimeout(()=>tone(f,.14,'triangle',.25), i*120));
-      setTimeout(()=>{ noise(.2,.15); }, seq.length*120 + 80);
+      setTimeout(()=>{ const {src,g}=noise(.25,.15,false); src.start(); setTimeout(()=>{ try{src.stop();}catch(e){}},250); }, seq.length*120 + 80);
+    },
+    penLoop: null,
+    startPen(){
+      if(!this.penLoop){
+        const {src,g} = noise(0.3, 0.0, true);
+        this.penLoop = {src, g};
+        try{ src.start(); }catch(e){}
+      }
+      // fade in
+      const ac = ctx();
+      this.penLoop.g.gain.cancelScheduledValues(ac.currentTime);
+      this.penLoop.g.gain.setTargetAtTime(0.18, ac.currentTime, 0.02);
+    },
+    stopPen(){
+      if(!this.penLoop) return;
+      const ac = ctx();
+      this.penLoop.g.gain.cancelScheduledValues(ac.currentTime);
+      this.penLoop.g.gain.setTargetAtTime(0.0, ac.currentTime, 0.05);
     }
   };
+
   function maybeRandomSFX(){
     const r = Math.random();
     if(r < 0.25) sfx.coin();
@@ -348,13 +393,12 @@ beautiful</textarea>
     }
   }
 
-  // landmark size: ~25% of avatar height, +20% across platforms (as requested)
+  // landmark size: ~25% of avatar height, +20% globally
   function landmarkSizePx(){
     const avatar = document.getElementById('avatar');
     const h = avatar.clientHeight || 72;
     let base = Math.round(0.25 * h);
-    base = Math.round(base * 1.2); // +20% globally
-    // slight bump on huge screens
+    base = Math.round(base * 1.2); // +20%
     const w = document.querySelector('.map-box').clientWidth || 800;
     if (w > 1100) base = Math.min(base + 4, Math.round(0.33 * h));
     return Math.max(14, base);
@@ -452,6 +496,102 @@ beautiful</textarea>
     setTimeout(()=>{ for(let i=0;i<16;i++) spawnOne(); }, 300);
   }
 
+  // =====================
+  // Writing Canvas logic
+  // =====================
+  const canvas = $('writeCanvas');
+  const writeSection = $('writeSection');
+  const btnToggleWrite = $('btnToggleWrite');
+  const btnWriteToggleTop = $('btnWriteToggleTop');
+  const btnUndo = $('btnUndo');
+  const btnClear = $('btnClear');
+
+  let dpr = Math.max(1, window.devicePixelRatio || 1);
+  let ctx2d = canvas.getContext('2d');
+  let drawing = false;
+  let strokes = []; // array of stroke arrays: [{x,y}, ...]
+  let currentStroke = [];
+
+  function resizeCanvas(){
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.max(300, Math.floor(rect.width));
+    const h = Math.max(140, Math.floor(rect.height));
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    ctx2d.setTransform(dpr,0,0,dpr,0,0);
+    redraw();
+  }
+
+  function redraw(){
+    // clear
+    ctx2d.clearRect(0,0,canvas.width,canvas.height);
+    ctx2d.save();
+    ctx2d.scale(dpr,dpr);
+    // draw strokes
+    ctx2d.lineCap = 'round'; ctx2d.lineJoin='round';
+    ctx2d.lineWidth = 4; ctx2d.strokeStyle = '#3b2a15';
+    for(const s of strokes){
+      if(s.length<2) continue;
+      ctx2d.beginPath();
+      ctx2d.moveTo(s[0].x, s[0].y);
+      for(let i=1;i<s.length;i++){ ctx2d.lineTo(s[i].x, s[i].y); }
+      ctx2d.stroke();
+    }
+    ctx2d.restore();
+  }
+
+  function getPos(e){
+    const r = canvas.getBoundingClientRect();
+    const x = (e.clientX ?? (e.touches && e.touches[0].clientX)) - r.left;
+    const y = (e.clientY ?? (e.touches && e.touches[0].clientY)) - r.top;
+    return {x, y};
+  }
+
+  function startDraw(e){
+    try{ ctx().resume(); }catch(_){}
+    drawing = true;
+    currentStroke = [];
+    strokes.push(currentStroke);
+    const p = getPos(e);
+    currentStroke.push(p);
+    sfx.startPen();
+  }
+  function moveDraw(e){
+    if(!drawing) return;
+    const p = getPos(e);
+    currentStroke.push(p);
+    redraw();
+  }
+  function endDraw(){
+    if(!drawing) return;
+    drawing = false;
+    sfx.stopPen();
+  }
+
+  // Pointer events
+  canvas.addEventListener('pointerdown', (e)=>{ canvas.setPointerCapture(e.pointerId); startDraw(e); });
+  canvas.addEventListener('pointermove', moveDraw);
+  canvas.addEventListener('pointerup', endDraw);
+  canvas.addEventListener('pointercancel', endDraw);
+  canvas.addEventListener('pointerleave', endDraw);
+
+  // Toolbar actions
+  btnUndo.addEventListener('click', ()=>{ strokes.pop(); redraw(); });
+  btnClear.addEventListener('click', ()=>{ strokes = []; redraw(); sfx.drum(); });
+
+  function toggleWrite(){
+    const hidden = writeSection.classList.toggle('write-hidden');
+    btnToggleWrite.textContent = hidden ? 'Show' : 'Hide';
+  }
+  btnToggleWrite.addEventListener('click', toggleWrite);
+  btnWriteToggleTop.addEventListener('click', toggleWrite);
+
+  // Initial canvas sizing
+  new ResizeObserver(()=>resizeCanvas()).observe(canvas);
+  window.addEventListener('orientationchange', ()=>setTimeout(resizeCanvas, 250));
+
+  // =====================
+
   // Game state
   let baseList = [];
   let queue = [];
@@ -533,6 +673,8 @@ beautiful</textarea>
       queue.shift();
       updateStats();
       $('answer').value = '';
+      // clear writing canvas for next word
+      strokes = []; redraw();
       next(true);
 
     } else {
@@ -548,6 +690,7 @@ beautiful</textarea>
 
       updateStats();
       $('answer').value = '';
+      // keep writing for another try
       next(true);
     }
   }
@@ -579,7 +722,7 @@ beautiful</textarea>
   });
   $('btnHear').addEventListener('click', ()=>{ if(current){ try{ ctx().resume(); }catch(e){} speak(current.raw); } });
   $('answer').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ submit(); }});
-  $('btnSubmit').addEventListener('click', submit);
+  $('btnMark').addEventListener('click', submit);
 
   // Initialize best
   const best = localStorage.getItem('treasure_best_repeats');
@@ -592,6 +735,13 @@ beautiful</textarea>
     setAvatarAtPercent(stepIndex/(total||1));
     placeAtPercent($('chest'), 0.995);
   });
+
+  // Init path after DOM ready
+  function initPath(){
+    path = document.getElementById('trail');
+    pathLength = path.getTotalLength ? path.getTotalLength() : 1000;
+    placeAtPercent($('chest'), 0.995);
+  }
 })();
 </script>
 </body>
