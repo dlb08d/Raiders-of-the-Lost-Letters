@@ -45,11 +45,11 @@
     border:3px solid var(--border); border-radius:16px; overflow:hidden;
   }
 
-  /* Layer ordering with z-index */
-  #decorLayer{ position:absolute; inset:0; pointer-events:none; z-index:1; }
+  /* Layer ordering (landmarks along trail, not behind it) */
   svg#map{ position:absolute; inset:0; z-index:2; }
-  #xLayer{ position:absolute; inset:0; pointer-events:none; z-index:3; }
-  #avatar, #chest{ position:absolute; transform:translate(-50%,-50%); z-index:4; }
+  #decorLayer{ position:absolute; inset:0; pointer-events:none; z-index:3; } /* landmarks */
+  #xLayer{ position:absolute; inset:0; pointer-events:none; z-index:4; }     /* X marks */
+  #avatar, #chest{ position:absolute; transform:translate(-50%,-50%); z-index:5; }
 
   #trail{ stroke:var(--trail); stroke-width:9; fill:none; stroke-linecap:round; stroke-dasharray:16 18; }
 
@@ -69,6 +69,18 @@
     100%{opacity:0; transform:translateY(120vh) rotate(720deg)}
   }
 
+  /* Chest sparkle animation */
+  #sparkles { position:absolute; inset:0; pointer-events:none; z-index:6; }
+  .sparkle {
+    position:absolute; width:8px; height:8px; background:radial-gradient(#fff, #ffd54a 60%, transparent 60%);
+    border-radius:50%; opacity:0; animation: twinkle 1.2s ease-out forwards;
+  }
+  @keyframes twinkle {
+    0% { transform: scale(0.2) translate(-50%,-50%); opacity: 0; }
+    20% { opacity: 1; transform: scale(1) translate(-50%,-50%); }
+    100% { opacity: 0; transform: scale(0.1) translate(-50%,-50%) translateY(-12px); }
+  }
+
   .good{ color:var(--good); } .bad{ color:var(--bad); }
   .sr-only{ position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden; }
 </style>
@@ -76,7 +88,7 @@
 <body>
   <header>
     <h1>Raiders of the Lost Letters</h1>
-    <div class="tag">Spell your way across the map! ❌ marks each word. Find the treasure chest at the end.</div>
+    <div class="tag">Spell your way across the map! ❌ marks each word. Landmarks appear along the trail; treasure chest sparkles at the end.</div>
   </header>
 
   <main class="wrap grid">
@@ -102,35 +114,54 @@ beautiful</textarea>
     <!-- Map -->
     <section class="panel grid">
       <div class="map-box">
-        <div id="decorLayer"></div>
         <svg id="map" viewBox="0 0 1000 240" preserveAspectRatio="none" aria-hidden="true">
           <defs>
-            <!-- smaller, subtle map art -->
+            <!-- Landmark icon set (small, simple) -->
             <g id="palm">
-              <rect x="-2" y="0" width="4" height="22" fill="#7a4f21" opacity="0.85"/>
-              <path d="M0,0 C-14,4 -10,-6 0,-5 C10,-6 14,4 0,0 Z" fill="#2f7d3b" opacity="0.9"/>
-              <path d="M0,-2 C-10,2 -7,-6 0,-5 C7,-6 10,2 0,-2 Z" fill="#3f9d4d" opacity="0.9"/>
+              <rect x="-2" y="0" width="4" height="22" fill="#6b4a2a"/>
+              <path d="M0,0 C-14,4 -10,-6 0,-5 C10,-6 14,4 0,0 Z" fill="#2f7d3b"/>
+              <path d="M0,-2 C-10,2 -7,-6 0,-5 C7,-6 10,2 0,-2 Z" fill="#3e9a4a"/>
             </g>
-            <g id="ship">
-              <path d="M-14,10 h28 l-5,7 h-18z" fill="#5a3f1f" opacity="0.85"/>
-              <rect x="-2" y="-1" width="4" height="12" fill="#5a3f1f" opacity="0.85"/>
-              <path d="M2,8 l12,-8 v12 z" fill="#d9c08c" opacity="0.85"/>
-              <path d="M-2,8 l-12,-8 v12 z" fill="#caae74" opacity="0.85"/>
+            <g id="pine">
+              <rect x="-1.5" y="8" width="3" height="12" fill="#6b4a2a"/>
+              <path d="M0,0 L10,12 L-10,12 Z" fill="#2f6b3b"/>
+              <path d="M0,-6 L8,4 L-8,4 Z" fill="#3c8d4c"/>
             </g>
             <g id="skull">
-              <path d="M0,0 a14,10 0 1,0 0.1,0" fill="#a98e6b" opacity="0.9"/>
+              <path d="M0,0 a14,10 0 1,0 0.1,0" fill="#a98e6b"/>
               <circle cx="-5" cy="-3" r="2.4" fill="#2a2115"/>
               <circle cx="5" cy="-3" r="2.4" fill="#2a2115"/>
               <rect x="-1.6" y="1.5" width="3.2" height="5" fill="#2a2115"/>
             </g>
             <g id="compass">
-              <circle cx="0" cy="0" r="8" fill="none" stroke="#7a4f21" stroke-width="2" opacity="0.9"/>
-              <path d="M0,-8 L2.4,0 L0,8 L-2.4,0 Z" fill="#caa33a" opacity="0.9"/>
+              <circle cx="0" cy="0" r="8" fill="none" stroke="#7a4f21" stroke-width="2"/>
+              <path d="M0,-8 L2.4,0 L0,8 L-2.4,0 Z" fill="#caa33a"/>
+            </g>
+            <g id="fire">
+              <path d="M-10,10 l20,0 l-6,4 l-8,0 z" fill="#6b3f1f"/>
+              <path d="M0,0 C-6,4 -4,-4 0,-6 C4,-4 6,4 0,0 Z" fill="#ff8a00"/>
+              <path d="M0,-2 C-4,2 -3,-3 0,-4 C3,-3 4,2 0,-2 Z" fill="#ffd54a"/>
+            </g>
+            <g id="rock">
+              <path d="M-10,6 L-6,-2 L6,-2 L10,6 Z" fill="#8b7b6d"/>
+            </g>
+            <g id="barrel">
+              <rect x="-6" y="-8" width="12" height="16" rx="2" fill="#7a4f21"/>
+              <rect x="-6" y="-5" width="12" height="2" fill="#5a3a19"/>
+              <rect x="-6" y="3" width="12" height="2" fill="#5a3a19"/>
+            </g>
+            <g id="tent">
+              <path d="M-12,8 L0,-8 L12,8 Z" fill="#b07d38"/>
+              <path d="M0,8 L0,-8" stroke="#8a5f2a" stroke-width="2"/>
             </g>
           </defs>
           <path id="trail" d="M60,180 C160,50 260,220 360,140 S560,40 660,140 820,220 920,140" />
         </svg>
 
+        <!-- Landmarks along trail -->
+        <div id="decorLayer"></div>
+
+        <!-- X's -->
         <div id="xLayer"></div>
 
         <!-- Avatar (explorer) -->
@@ -150,6 +181,9 @@ beautiful</textarea>
           <path d="M10 30 q30-18 60 0 v8 h-60z" fill="#8c5228" stroke="#2c1b0e" stroke-width="3"/>
           <rect x="37" y="40" width="6" height="10" fill="#c99b3b" />
         </svg>
+
+        <!-- Sparkles layer -->
+        <div id="sparkles"></div>
       </div>
 
       <label class="sr-only" for="answer">Type the word</label>
@@ -253,7 +287,6 @@ beautiful</textarea>
     pathLength = path.getTotalLength ? path.getTotalLength() : 1000;
     // place chest at the end
     placeAtPercent($('chest'), 0.995);
-    drawDecor();
   }
   function pointAt(p){
     p = Math.max(0, Math.min(1, p));
@@ -267,6 +300,7 @@ beautiful</textarea>
   }
   function setAvatarAtPercent(p){ placeAtPercent($('avatar'), p); }
 
+  // X's
   function drawXMarks(n){
     const layer = $('xLayer'); layer.innerHTML='';
     if(n <= 0) return;
@@ -281,27 +315,66 @@ beautiful</textarea>
     }
   }
 
-  function drawDecor(){
+  // Random landmarks along segments between X's
+  function drawRandomLandmarks(n){
     const layer = $('decorLayer'); layer.innerHTML = '';
     const svgNS = "http://www.w3.org/2000/svg";
+    const iconIds = ['palm','pine','skull','fire','compass','rock','barrel','tent'];
 
-    function placeUse(id, p, dx=0, dy=0, scale=0.8, rotate=0){
-      // smaller scale and behind everything (decorLayer z-index=1)
-      const el = document.createElementNS(svgNS, 'svg');
-      el.setAttribute('viewBox','-25 -25 50 50');
-      el.style.position = 'absolute';
-      el.style.transform = `translate(-50%,-50%) rotate(${rotate}deg) scale(${scale})`;
-      const pt = pointAt(p);
-      el.style.left = (pt.x + dx) + 'px';
-      el.style.top  = (pt.y + dy) + 'px';
-      el.innerHTML = `<use href="#${id}"></use>`;
-      layer.appendChild(el);
+    // choose a small number per segment, but not every segment to avoid clutter
+    const segments = Math.max(1, n); // n words => n segments including last stretch
+    for(let i=0;i<segments;i++){
+      const landmarksThisSeg = Math.random() < 0.7 ? 1 : 0; // 70% segments get 1 landmark
+      for(let k=0;k<landmarksThisSeg;k++){
+        const id = iconIds[Math.floor(Math.random()*iconIds.length)];
+        // place between i/n and (i+1)/n with a slight offset
+        const startP = i/n;
+        const endP   = Math.min(1, (i+1)/n);
+        const p = startP + Math.random() * Math.max(0.04, (endP - startP) * 0.85); // avoid overlap with X
+        const pt = pointAt(p);
+
+        const el = document.createElementNS(svgNS, 'svg');
+        el.setAttribute('viewBox','-25 -25 50 50');
+        el.style.position = 'absolute';
+        const scale = 0.75 + Math.random()*0.25;
+        const rot = (Math.random()*20 - 10);
+        // small offset so it doesn't sit exactly on the line
+        const dx = (Math.random()*2-1) * 24;
+        const dy = (Math.random()*2-1) * 20;
+        el.style.left = (pt.x + dx) + 'px';
+        el.style.top  = (pt.y + dy) + 'px';
+        el.style.transform = `translate(-50%,-50%) rotate(${rot}deg) scale(${scale})`;
+        el.innerHTML = `<use href="#${id}"></use>`;
+        layer.appendChild(el);
+      }
     }
-    // Safer offsets so they don't sit on top of the trail
-    placeUse('palm', .10, -60, -60, 0.85, -8);
-    placeUse('ship', .30, 70, 60, 0.85, 6);
-    placeUse('skull', .55, -70, 60, 0.8, -4);
-    placeUse('compass', .80, 70, -70, 0.8, 0);
+  }
+
+  // Chest sparkle: spawn sparkles around chest position a few times
+  function chestSparkle(){
+    const layer = $('sparkles');
+    const chest = $('chest');
+    const rect = chest.getBoundingClientRect();
+    const mapRect = chest.parentElement.getBoundingClientRect();
+
+    function spawnOne(){
+      const s = document.createElement('div');
+      s.className = 'sparkle';
+      // position around chest (relative to container)
+      const cx = rect.left - mapRect.left + rect.width/2;
+      const cy = rect.top - mapRect.top + rect.height/2;
+      const r = 40 * Math.random();
+      const angle = Math.random()*Math.PI*2;
+      s.style.left = (cx + r*Math.cos(angle)) + 'px';
+      s.style.top  = (cy + r*Math.sin(angle)) + 'px';
+      s.style.animationDelay = (Math.random()*0.3)+'s';
+      layer.appendChild(s);
+      setTimeout(()=>{ if(s.parentNode) s.parentNode.removeChild(s); }, 1400);
+    }
+
+    for(let i=0;i<14;i++) spawnOne();
+    // a second burst
+    setTimeout(()=>{ for(let i=0;i<10;i++) spawnOne(); }, 350);
   }
 
   // Game state
@@ -310,7 +383,7 @@ beautiful</textarea>
   let total = 0;
   let current = null;
   let stats = {correct:0, wrong:0, attempts:0};
-  let stepIndex = 0;
+  let stepIndex = 0; // progress only on correct
   let speakLock = false;
 
   function repeats(){ return Math.max(0, stats.attempts - total); }
@@ -347,6 +420,7 @@ beautiful</textarea>
     $('feedback').textContent='';
     $('feedback').className='';
     drawXMarks(total);
+    drawRandomLandmarks(total);
     updateStats();
     setAvatarAtPercent(0);
     next(true);
@@ -377,6 +451,7 @@ beautiful</textarea>
       $('feedback').className = 'good';
       maybeRandomSFX();
 
+      // Advance one X (progress only on correct)
       stepIndex = Math.min(total, stepIndex + 1);
       setAvatarAtPercent(stepIndex/total);
 
@@ -391,9 +466,7 @@ beautiful</textarea>
       $('feedback').className = 'bad';
       sfx.drum();
 
-      stepIndex = Math.max(0, stepIndex - 1);
-      setAvatarAtPercent(stepIndex/total);
-
+      // No backtracking; stay on same X
       queue.shift();
       const insertAt = Math.min(3, queue.length);
       queue.splice(insertAt, 0, current);
@@ -414,6 +487,7 @@ beautiful</textarea>
     $('feedback').innerHTML = `🎉 You found the treasure! Repeats (score): <b>${score}</b>. Best: <b>${localStorage.getItem(key)}</b>.`;
     confettiBurst(80);
     sfx.treasure();
+    chestSparkle();
   }
 
   // Events
@@ -426,7 +500,7 @@ beautiful</textarea>
   });
   $('btnHuntAgain').addEventListener('click', ()=>{
     if(baseList.length === 0){ alert('Paste a word list first.'); return; }
-    startRound(true);
+    startRound(true); // shuffle & new random landmarks
   });
   $('btnHear').addEventListener('click', ()=>{ if(current){ try{ ctx().resume(); }catch(e){} speak(current.raw); } });
   $('answer').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ submit(); }});
