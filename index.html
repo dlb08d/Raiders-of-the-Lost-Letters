@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Raiders of the Lost Letters</title>
 <style>
   :root{
@@ -16,7 +16,7 @@
   header{ padding:16px 14px 6px; text-align:center; }
   h1{ margin:0 0 4px; color:var(--border); text-shadow:1px 1px #fff; font-size:24px; }
   .tag{ color:#6b5432; font-size:14px }
-  .wrap{ width:min(980px, 94%); margin:0 auto 20px; }
+  .wrap{ width:min(980px, 94%); margin:0 auto 16px; }
 
   .grid{ display:grid; gap:10px; }
   .panel{ background:var(--panel); border:2px solid var(--border); border-radius:14px; padding:12px; }
@@ -24,16 +24,17 @@
   textarea{
     width:100%; min-height:120px; resize:vertical;
     border:2px solid var(--border); border-radius:10px; padding:10px;
-    font-size:15px; background:#fffdf5; color:#2a1d0e;
+    font-size:16px; background:#fffdf5; color:#2a1d0e; /* >=16px to prevent iOS zoom */
   }
   .controls{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
   button{
-    padding:10px 14px; border:none; border-radius:10px; background:var(--accent); color:#1f1408;
-    cursor:pointer; font-size:15px;
+    padding:12px 14px; border:none; border-radius:12px; background:var(--accent); color:#1f1408;
+    cursor:pointer; font-size:16px; min-height:44px;
   }
   button.secondary{ background:#caa33a }
   input[type="text"]{
-    width:100%; padding:10px 12px; border:2px solid var(--border); border-radius:10px; font-size:18px; background:#fffdf5;
+    width:100%; padding:12px 12px; border:2px solid var(--border); border-radius:12px; font-size:18px; background:#fffdf5;
+    min-height:44px;
   }
   .stats{ display:flex; flex-wrap:wrap; gap:8px; font-size:13px; color:#5a4123; }
   .pill{ padding:6px 10px; background:#f9edcf; border:1px solid #d2b473; border-radius:999px; }
@@ -43,6 +44,14 @@
     position:relative; width:100%; height:240px;
     background:linear-gradient(180deg,#e8d3a1,#d6b97b);
     border:3px solid var(--border); border-radius:16px; overflow:hidden;
+  }
+
+  /* Responsive: phones */
+  @media (max-width:430px){
+    h1{ font-size:20px; text-shadow:none; }
+    .map-box{ height:300px; }
+    .controls{ gap:8px; }
+    .controls button{ flex:1 1 48%; }
   }
 
   /* Layer ordering */
@@ -69,7 +78,7 @@
     100%{opacity:0; transform:translateY(120vh) rotate(720deg)}
   }
 
-  /* Chest sparkle animation (noticeable & glow) */
+  /* Chest sparkle animation */
   #sparkles { position:absolute; inset:0; pointer-events:none; z-index:6; }
   .sparkle {
     position:absolute; width:12px; height:12px;
@@ -91,7 +100,7 @@
 <body>
   <header>
     <h1>Raiders of the Lost Letters</h1>
-    <div class="tag">Spell your way across the map! ❌ marks each word. Proportional landmarks (~25% of character height) appear along the trail; treasure chest sparkles at the end.</div>
+    <div class="tag">Auto-detects your device. Landmarks are +20% larger (all platforms), offset from the trail; treasure chest sparkles at the end.</div>
   </header>
 
   <main class="wrap grid">
@@ -117,7 +126,7 @@ beautiful</textarea>
     <!-- Map -->
     <section class="panel grid">
       <div class="map-box">
-        <svg id="map" viewBox="0 0 1000 240" preserveAspectRatio="none" aria-hidden="true">
+        <svg id="map" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true">
           <defs>
             <!-- Landmark icon set -->
             <g id="palm">
@@ -158,7 +167,7 @@ beautiful</textarea>
               <path d="M0,8 L0,-8" stroke="#8a5f2a" stroke-width="2"/>
             </g>
           </defs>
-          <path id="trail" d="M60,180 C160,50 260,220 360,140 S560,40 660,140 820,220 920,140" />
+          <path id="trail" d="M60,200 C160,60 260,230 360,160 S560,70 660,160 820,230 920,160" />
         </svg>
 
         <!-- Landmarks along trail -->
@@ -215,6 +224,21 @@ beautiful</textarea>
 (function(){
   const $ = (id)=>document.getElementById(id);
   const normalize = s => s.toLowerCase().trim().replace(/[^a-z']/g,'');
+
+  // Device auto-detection
+  const IS_PHONE = /iPhone|iPod|Android.+Mobile/i.test(navigator.userAgent) || window.matchMedia('(max-width: 430px)').matches;
+  const IS_TABLET = /iPad|Android(?!.*Mobile)/i.test(navigator.userAgent) || window.matchMedia('(min-width: 431px) and (max-width: 900px)').matches;
+
+  // Adjust map height a bit for phones/tablets
+  function applyDeviceLayout(){
+    const mapBox = document.querySelector('.map-box');
+    if(!mapBox) return;
+    if(IS_PHONE){ mapBox.style.height = '300px'; }
+    else if(IS_TABLET){ mapBox.style.height = '280px'; }
+    else { mapBox.style.height = '240px'; }
+  }
+  applyDeviceLayout();
+  window.addEventListener('resize', applyDeviceLayout);
 
   // Shuffle
   function shuffle(arr){
@@ -330,13 +354,16 @@ beautiful</textarea>
     }
   }
 
-  // landmark size: ~25% of avatar height, with a slight scale-up on large screens
+  // landmark size: ~25% of avatar height, then +20% across all platforms; slight bump on huge screens
   function landmarkSizePx(){
     const avatar = document.getElementById('avatar');
     const h = avatar.clientHeight || 72;
-    let base = Math.max(12, Math.round(0.25 * h)); // ~25% of avatar
+    let base = Math.max(12, Math.round(0.25 * h));      // base ~25% of avatar height
+    // Big screens get a small bump
     const w = document.querySelector('.map-box').clientWidth || 800;
-    if (w > 1100) base = Math.min(base + 4, Math.round(0.33 * h)); // slight boost on big screens, cap at 33%
+    if (w > 1100) base = Math.min(base + 4, Math.round(0.33 * h));
+    // Global +20%
+    base = Math.round(base * 1.2);
     return base;
   }
 
@@ -369,8 +396,9 @@ beautiful</textarea>
 
         // perpendicular offset so it never sits on the trail
         const side = Math.random() < 0.5 ? -1 : 1;
-        const distBase = (document.querySelector('.map-box').clientWidth > 900) ? 34 : 28;
-        const dist = distBase + Math.random()*14; // 28–48px
+        const mapW = document.querySelector('.map-box').clientWidth || 800;
+        const distBase = (mapW <= 430) ? 34 : (mapW > 900 ? 34 : 30);
+        const dist = distBase + Math.random()*14; // 30–48px (or 34–48 on small phones/large screens)
         const dx = nx * dist * side;
         const dy = ny * dist * side;
 
@@ -402,7 +430,7 @@ beautiful</textarea>
       s.className = 'sparkle';
       const cx = rect.left - mapRect.left + rect.width/2;
       const cy = rect.top - mapRect.top + rect.height/2;
-      const r = 48 * Math.random(); // flare radius
+      const r = 48 * Math.random();
       const angle = Math.random()*Math.PI*2;
       s.style.left = (cx + r*Math.cos(angle)) + 'px';
       s.style.top  = (cy + r*Math.sin(angle)) + 'px';
