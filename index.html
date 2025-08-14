@@ -11,10 +11,15 @@
     --border:#8b4513; --trail:#7a4f21; --x:#a66a2a; --good:#1f8b45; --bad:#c0392b;
   }
   *{box-sizing:border-box}
-  body{ margin:0; background:var(--bg); color:var(--ink);
-        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif; }
-  header{ padding:16px 14px 6px; text-align:center; }
-  h1{ margin:0 0 4px; color:var(--border); text-shadow:1px 1px #fff; font-size:24px; }
+  html,body{ height:100%; }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    -webkit-tap-highlight-color: transparent;
+  }
+  header{ padding:14px 12px 6px; text-align:center; }
+  h1{ margin:0 0 4px; color:var(--border); text-shadow:1px 1px #fff; font-size:22px; }
   .tag{ color:#6b5432; font-size:14px }
   .wrap{ width:min(980px, 94%); margin:0 auto 16px; }
 
@@ -29,29 +34,32 @@
   .controls{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
   button{
     padding:12px 14px; border:none; border-radius:12px; background:var(--accent); color:#1f1408;
-    cursor:pointer; font-size:16px; min-height:44px;
+    cursor:pointer; font-size:16px; min-height:44px; /* Apple HIG hit target */
   }
   button.secondary{ background:#caa33a }
   input[type="text"]{
-    width:100%; padding:12px 12px; border:2px solid var(--border); border-radius:12px; font-size:18px; background:#fffdf5;
+    flex:1; padding:12px 12px; border:2px solid var(--border); border-radius:12px; font-size:18px; background:#fffdf5;
     min-height:44px;
   }
+  .answer-row{ display:flex; gap:10px; align-items:center; }
   .stats{ display:flex; flex-wrap:wrap; gap:8px; font-size:13px; color:#5a4123; }
   .pill{ padding:6px 10px; background:#f9edcf; border:1px solid #d2b473; border-radius:999px; }
 
   /* Treasure map */
   .map-box{
-    position:relative; width:100%; height:240px;
+    position:relative; width:100%; height:260px;
     background:linear-gradient(180deg,#e8d3a1,#d6b97b);
     border:3px solid var(--border); border-radius:16px; overflow:hidden;
   }
 
-  /* Responsive: phones */
+  /* Auto-detect: phone/tablet/desktop -> tweak map height */
   @media (max-width:430px){
-    h1{ font-size:20px; text-shadow:none; }
     .map-box{ height:300px; }
-    .controls{ gap:8px; }
-    .controls button{ flex:1 1 48%; }
+    h1{ font-size:20px; text-shadow:none; }
+    .controls button{ flex:1 1 48%; } /* two-up buttons on phone */
+  }
+  @media (min-width:900px){
+    .map-box{ height:260px; }
   }
 
   /* Layer ordering */
@@ -100,7 +108,7 @@
 <body>
   <header>
     <h1>Raiders of the Lost Letters</h1>
-    <div class="tag">Auto-detects your device. Landmarks are +20% larger (all platforms), offset from the trail; treasure chest sparkles at the end.</div>
+    <div class="tag">Now with a Submit button. iOS alignment fix keeps the explorer on the trail and the chest visible.</div>
   </header>
 
   <main class="wrap grid">
@@ -167,7 +175,7 @@ beautiful</textarea>
               <path d="M0,8 L0,-8" stroke="#8a5f2a" stroke-width="2"/>
             </g>
           </defs>
-          <path id="trail" d="M60,200 C160,60 260,230 360,160 S560,70 660,160 820,230 920,160" />
+          <path id="trail" d="M60,210 C160,70 260,240 360,170 S560,90 660,170 820,240 920,170" />
         </svg>
 
         <!-- Landmarks along trail -->
@@ -198,8 +206,11 @@ beautiful</textarea>
         <div id="sparkles"></div>
       </div>
 
-      <label class="sr-only" for="answer">Type the word</label>
-      <input id="answer" type="text" placeholder="Type the word and press Enter" autocomplete="off" />
+      <div class="answer-row">
+        <label class="sr-only" for="answer">Type the word</label>
+        <input id="answer" type="text" placeholder="Type the word" autocomplete="off" />
+        <button id="btnSubmit">Submit</button>
+      </div>
       <div id="feedback"></div>
 
       <div class="stats">
@@ -224,21 +235,6 @@ beautiful</textarea>
 (function(){
   const $ = (id)=>document.getElementById(id);
   const normalize = s => s.toLowerCase().trim().replace(/[^a-z']/g,'');
-
-  // Device auto-detection
-  const IS_PHONE = /iPhone|iPod|Android.+Mobile/i.test(navigator.userAgent) || window.matchMedia('(max-width: 430px)').matches;
-  const IS_TABLET = /iPad|Android(?!.*Mobile)/i.test(navigator.userAgent) || window.matchMedia('(min-width: 431px) and (max-width: 900px)').matches;
-
-  // Adjust map height a bit for phones/tablets
-  function applyDeviceLayout(){
-    const mapBox = document.querySelector('.map-box');
-    if(!mapBox) return;
-    if(IS_PHONE){ mapBox.style.height = '300px'; }
-    else if(IS_TABLET){ mapBox.style.height = '280px'; }
-    else { mapBox.style.height = '240px'; }
-  }
-  applyDeviceLayout();
-  window.addEventListener('resize', applyDeviceLayout);
 
   // Shuffle
   function shuffle(arr){
@@ -307,6 +303,15 @@ beautiful</textarea>
     }
   }
 
+  // --- Coordinate scaling to fix iOS alignment ---
+  const VIEW_W = 1000, VIEW_H = 260;
+  function svgScale(){
+    const svg = document.getElementById('map');
+    const w = svg.clientWidth || VIEW_W;
+    const h = svg.clientHeight || VIEW_H;
+    return { sx: w/VIEW_W, sy: h/VIEW_H };
+  }
+
   // Map / Path helpers
   let path, pathLength=1;
   function initPath(){
@@ -319,6 +324,43 @@ beautiful</textarea>
     const d = p * pathLength;
     return path.getPointAtLength(d);
   }
+  function placeAtPercent(el, p){
+    const pt = pointAt(p);
+    const {sx, sy} = svgScale();
+    el.style.left = (pt.x * sx) + 'px';
+    el.style.top  = (pt.y * sy) + 'px';
+  }
+  function setAvatarAtPercent(p){ placeAtPercent($('avatar'), p); }
+
+  // X's
+  function drawXMarks(n){
+    const layer = $('xLayer'); layer.innerHTML='';
+    if(n <= 0) return;
+    const {sx, sy} = svgScale();
+    for(let i=1;i<=n;i++){
+      const p = i/n;
+      const pt = pointAt(p);
+      const x = document.createElement('div');
+      x.className = 'x';
+      x.style.left = (pt.x * sx) + 'px';
+      x.style.top  = (pt.y * sy) + 'px';
+      layer.appendChild(x);
+    }
+  }
+
+  // landmark size: ~25% of avatar height, +20% across platforms (as requested)
+  function landmarkSizePx(){
+    const avatar = document.getElementById('avatar');
+    const h = avatar.clientHeight || 72;
+    let base = Math.round(0.25 * h);
+    base = Math.round(base * 1.2); // +20% globally
+    // slight bump on huge screens
+    const w = document.querySelector('.map-box').clientWidth || 800;
+    if (w > 1100) base = Math.min(base + 4, Math.round(0.33 * h));
+    return Math.max(14, base);
+  }
+
+  // Helpers: tangent/normal in SVG space
   function tangentAt(p){
     const delta = 0.002;
     const p1 = pointAt(Math.max(0, p - delta));
@@ -332,40 +374,6 @@ beautiful</textarea>
     const {tx, ty} = tangentAt(p);
     return { nx: -ty, ny: tx };
   }
-  function placeAtPercent(el, p){
-    const pt = pointAt(p);
-    el.style.left = pt.x + 'px';
-    el.style.top  = pt.y + 'px';
-  }
-  function setAvatarAtPercent(p){ placeAtPercent($('avatar'), p); }
-
-  // X's
-  function drawXMarks(n){
-    const layer = $('xLayer'); layer.innerHTML='';
-    if(n <= 0) return;
-    for(let i=1;i<=n;i++){
-      const p = i/n;
-      const pt = pointAt(p);
-      const x = document.createElement('div');
-      x.className = 'x';
-      x.style.left = pt.x + 'px';
-      x.style.top  = pt.y + 'px';
-      layer.appendChild(x);
-    }
-  }
-
-  // landmark size: ~25% of avatar height, then +20% across all platforms; slight bump on huge screens
-  function landmarkSizePx(){
-    const avatar = document.getElementById('avatar');
-    const h = avatar.clientHeight || 72;
-    let base = Math.max(12, Math.round(0.25 * h));      // base ~25% of avatar height
-    // Big screens get a small bump
-    const w = document.querySelector('.map-box').clientWidth || 800;
-    if (w > 1100) base = Math.min(base + 4, Math.round(0.33 * h));
-    // Global +20%
-    base = Math.round(base * 1.2);
-    return base;
-  }
 
   // Random landmarks along segments between X's, no adjacent repeats, rotated ±18°
   function drawRandomLandmarks(n){
@@ -373,6 +381,7 @@ beautiful</textarea>
     const svgNS = "http://www.w3.org/2000/svg";
     const iconIds = ['palm','pine','skull','fire','compass','rock','barrel','tent'];
     const size = landmarkSizePx();
+    const {sx, sy} = svgScale();
 
     const segments = Math.max(1, n);
     let lastId = null;
@@ -398,7 +407,7 @@ beautiful</textarea>
         const side = Math.random() < 0.5 ? -1 : 1;
         const mapW = document.querySelector('.map-box').clientWidth || 800;
         const distBase = (mapW <= 430) ? 34 : (mapW > 900 ? 34 : 30);
-        const dist = distBase + Math.random()*14; // 30–48px (or 34–48 on small phones/large screens)
+        const dist = distBase + Math.random()*14; // 30–48px
         const dx = nx * dist * side;
         const dy = ny * dist * side;
 
@@ -408,8 +417,8 @@ beautiful</textarea>
         el.style.width = size + 'px';
         el.style.height = size + 'px';
         const rot = (Math.random()*36 - 18); // ±18°
-        el.style.left = (base.x + dx) + 'px';
-        el.style.top  = (base.y + dy) + 'px';
+        el.style.left = ((base.x + dx) * sx) + 'px';
+        el.style.top  = ((base.y + dy) * sy) + 'px';
         el.style.transform = `translate(-50%,-50%) rotate(${rot}deg)`;
         el.style.opacity = 0.98;
         el.innerHTML = `<use href="#${id}"></use>`;
@@ -570,10 +579,19 @@ beautiful</textarea>
   });
   $('btnHear').addEventListener('click', ()=>{ if(current){ try{ ctx().resume(); }catch(e){} speak(current.raw); } });
   $('answer').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ submit(); }});
+  $('btnSubmit').addEventListener('click', submit);
 
   // Initialize best
   const best = localStorage.getItem('treasure_best_repeats');
   $('statBest').textContent = (best===null ? '—' : best);
+
+  // Recompute positions on resize/rotation to keep iOS aligned
+  window.addEventListener('resize', ()=>{
+    drawXMarks(total || 0);
+    drawRandomLandmarks(total || 0);
+    setAvatarAtPercent(stepIndex/(total||1));
+    placeAtPercent($('chest'), 0.995);
+  });
 })();
 </script>
 </body>
