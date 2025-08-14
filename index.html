@@ -11,7 +11,8 @@
     --border:#8b4513; --trail:#7a4f21; --x:#a66a2a; --good:#1f8b45; --bad:#c0392b;
   }
   *{box-sizing:border-box}
-  body{ margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif; }
+  body{ margin:0; background:var(--bg); color:var(--ink);
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif; }
   header{ padding:16px 14px 6px; text-align:center; }
   h1{ margin:0 0 4px; color:var(--border); text-shadow:1px 1px #fff; font-size:24px; }
   .tag{ color:#6b5432; font-size:14px }
@@ -20,15 +21,15 @@
   .grid{ display:grid; gap:10px; }
   .panel{ background:var(--panel); border:2px solid var(--border); border-radius:14px; padding:12px; }
 
-  /* Textarea for pasting word lists */
   textarea{
     width:100%; min-height:120px; resize:vertical;
-    border:2px solid var(--border); border-radius:10px; padding:10px; font-size:15px; background:#fffdf5; color:#2a1d0e;
+    border:2px solid var(--border); border-radius:10px; padding:10px;
+    font-size:15px; background:#fffdf5; color:#2a1d0e;
   }
-
   .controls{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
   button{
-    padding:10px 14px; border:none; border-radius:10px; background:var(--accent); color:#1f1408; cursor:pointer; font-size:15px;
+    padding:10px 14px; border:none; border-radius:10px; background:var(--accent); color:#1f1408;
+    cursor:pointer; font-size:15px;
   }
   button.secondary{ background:#caa33a }
   input[type="text"]{
@@ -39,21 +40,36 @@
 
   /* Treasure map */
   .map-box{
-    position:relative; width:100%; height:220px;  /* TALLER so avatar doesn't get clipped */
+    position:relative; width:100%; height:240px;  /* TALLER */
     background:linear-gradient(180deg,#e8d3a1,#d6b97b);
     border:3px solid var(--border); border-radius:16px; overflow:hidden;
   }
   svg#map{ position:absolute; inset:0; }
   #trail{ stroke:var(--trail); stroke-width:9; fill:none; stroke-linecap:round; stroke-dasharray:16 18; }
 
-  /* X marks are positioned along the path using absolute DIVs */
-  #xLayer{ position:absolute; inset:0; pointer-events:none; }
+  /* Layers */
+  #xLayer, #decorLayer{ position:absolute; inset:0; pointer-events:none; }
   .x{ position:absolute; width:14px; height:14px; transform:translate(-50%,-50%) rotate(45deg); }
-  .x:before,.x:after{ content:""; position:absolute; left:50%; top:50%; width:2px; height:16px; background:var(--x); transform:translate(-50%,-50%) rotate(45deg) }
+  .x:before,.x:after{ content:""; position:absolute; left:50%; top:50%; width:2px; height:16px; background:var(--x);
+                       transform:translate(-50%,-50%) rotate(45deg) }
   .x:after{ transform:translate(-50%,-50%) rotate(-45deg) }
 
-  /* Avatar placed as an absolutely positioned SVG inside the map box */
-  #avatar{ position:absolute; width:70px; height:70px; transform:translate(-50%,-50%); filter:drop-shadow(0 6px 6px rgba(0,0,0,.25)); }
+  /* Avatar */
+  #avatar{ position:absolute; width:72px; height:72px; transform:translate(-50%,-50%);
+           filter:drop-shadow(0 6px 6px rgba(0,0,0,.25)); }
+
+  /* Treasure chest at end */
+  #chest{ position:absolute; width:80px; height:80px; transform:translate(-50%,-50%);
+          filter:drop-shadow(0 6px 6px rgba(0,0,0,.25)); }
+
+  /* Confetti celebration */
+  .confetti{ position:fixed; inset:0; pointer-events:none; z-index:9999; }
+  .confetti i{ position:absolute; width:10px; height:10px; background:gold; opacity:0; animation:fall 1.4s ease forwards; }
+  @keyframes fall{
+    0%{opacity:1; transform:translateY(-20px) rotate(0)}
+    100%{opacity:0; transform:translateY(120vh) rotate(720deg)}
+  }
+
   .good{ color:var(--good); } .bad{ color:var(--bad); }
   .sr-only{ position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden; }
 </style>
@@ -61,7 +77,7 @@
 <body>
   <header>
     <h1>Raiders of the Lost Letters</h1>
-    <div class="tag">Paste your words, then spell them to reach the treasure. ❌ marks each word on the trail.</div>
+    <div class="tag">Spell your way across the map! ❌ marks each word. Find the treasure chest at the end.</div>
   </header>
 
   <main class="wrap grid">
@@ -87,9 +103,38 @@ beautiful</textarea>
     <!-- Map -->
     <section class="panel grid">
       <div class="map-box">
-        <svg id="map" viewBox="0 0 1000 220" preserveAspectRatio="none" aria-hidden="true">
-          <path id="trail" d="M60,160 C150,60 260,200 340,120 S520,40 600,120 760,200 880,120" />
+        <svg id="map" viewBox="0 0 1000 240" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <!-- simple palm shape -->
+            <g id="palm">
+              <rect x="-2" y="0" width="4" height="26" fill="#7a4f21"/>
+              <path d="M0,0 C-18,4 -12,-8 0,-6 C12,-8 18,4 0,0 Z" fill="#2f7d3b"/>
+              <path d="M0,-2 C-14,2 -9,-8 0,-6 C9,-8 14,2 0,-2 Z" fill="#3f9d4d"/>
+            </g>
+            <!-- ship silhouette -->
+            <g id="ship">
+              <path d="M-18,12 h36 l-6,8 h-24z" fill="#5a3f1f"/>
+              <rect x="-3" y="-2" width="6" height="14" fill="#5a3f1f"/>
+              <path d="M3,10 l14,-10 v14 z" fill="#d9c08c"/>
+              <path d="M-3,10 l-14,-10 v14 z" fill="#caae74"/>
+            </g>
+            <!-- skull cave -->
+            <g id="skull">
+              <path d="M0,0 a18,14 0 1,0 0.1,0" fill="#a98e6b"/>
+              <circle cx="-6" cy="-4" r="3" fill="#2a2115"/>
+              <circle cx="6" cy="-4" r="3" fill="#2a2115"/>
+              <rect x="-2" y="2" width="4" height="6" fill="#2a2115"/>
+            </g>
+            <!-- compass rose -->
+            <g id="compass">
+              <circle cx="0" cy="0" r="10" fill="none" stroke="#7a4f21" stroke-width="2"/>
+              <path d="M0,-10 L3,0 L0,10 L-3,0 Z" fill="#caa33a"/>
+            </g>
+          </defs>
+          <path id="trail" d="M60,180 C160,50 260,220 360,140 S560,40 660,140 820,220 920,140" />
         </svg>
+
+        <div id="decorLayer"></div>
         <div id="xLayer"></div>
 
         <!-- Avatar (explorer) -->
@@ -101,6 +146,13 @@ beautiful</textarea>
           <rect x="36" y="44" width="8" height="8" fill="#d9d2c2"/>
           <rect x="24" y="54" width="32" height="4" fill="#3b2a15"/>
           <path d="M28 44 l24 22" stroke="#caa06a" stroke-width="4"/>
+        </svg>
+
+        <!-- Treasure chest -->
+        <svg id="chest" viewBox="0 0 80 80" aria-hidden="true">
+          <rect x="10" y="30" width="60" height="30" rx="4" fill="#6b3f1f" stroke="#2c1b0e" stroke-width="3"/>
+          <path d="M10 30 q30-18 60 0 v8 h-60z" fill="#8c5228" stroke="#2c1b0e" stroke-width="3"/>
+          <rect x="37" y="40" width="6" height="10" fill="#c99b3b" />
         </svg>
       </div>
 
@@ -123,12 +175,15 @@ beautiful</textarea>
     </section>
   </main>
 
+  <!-- Confetti layer -->
+  <div id="confetti" class="confetti"></div>
+
 <script>
 (function(){
   const $ = (id)=>document.getElementById(id);
   const normalize = s => s.toLowerCase().trim().replace(/[^a-z']/g,'');
 
-  // Shuffle (Fisher-Yates)
+  // Shuffle
   function shuffle(arr){
     const a = arr.slice();
     for(let i=a.length-1;i>0;i--){
@@ -136,6 +191,45 @@ beautiful</textarea>
       [a[i],a[j]] = [a[j],a[i]];
     }
     return a;
+  }
+
+  // ----- Web Audio Sound Effects -----
+  let audioCtx;
+  function ctx(){ return audioCtx || (audioCtx = new (window.AudioContext||window.webkitAudioContext)()); }
+  function tone(f=440,d=0.12,type='sine',vol=0.25){
+    const ac = ctx();
+    const o = ac.createOscillator(); const g = ac.createGain();
+    o.type=type; o.frequency.value=f; g.gain.value=vol;
+    o.connect(g); g.connect(ac.destination); o.start(); setTimeout(()=>o.stop(), d*1000);
+  }
+  // noise burst (for drums)
+  function noise(dur=0.12, vol=0.2){
+    const ac = ctx();
+    const buffer = ac.createBuffer(1, ac.sampleRate*dur, ac.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<data.length;i++){ data[i] = (Math.random()*2-1) * Math.exp(-3*i/data.length); }
+    const src = ac.createBufferSource(); src.buffer = buffer;
+    const g = ac.createGain(); g.gain.value = vol;
+    src.connect(g); g.connect(ac.destination); src.start();
+  }
+  const sfx = {
+    coin(){ tone(900,.08,'square',.22); setTimeout(()=>tone(1350,.08,'square',.2),60); },
+    whoosh(){ tone(220,.05,'sine',.12); setTimeout(()=>tone(440,.06,'sine',.14),60); setTimeout(()=>tone(660,.08,'sine',.16),120); },
+    drum(){ noise(.12,.22); setTimeout(()=>noise(.09,.18),120); },
+    // Adventure-style treasure fanfare (no copyrighted audio, just tones)
+    treasure(){
+      const seq = [392,523,659,784,988,1175,1319]; // rising arpeggio
+      seq.forEach((f,i)=>setTimeout(()=>tone(f,.14,'triangle',.25), i*120));
+      setTimeout(()=>{ noise(.2,.15); }, seq.length*120 + 80); // soft "crash"
+    }
+  };
+
+  function maybeRandomSFX(){
+    const r = Math.random();
+    if(r < 0.25) sfx.coin();
+    else if(r < 0.45) sfx.whoosh();
+    else if(r < 0.6) sfx.drum();
+    // else: silent to avoid noise overload
   }
 
   function speak(text){
@@ -147,27 +241,48 @@ beautiful</textarea>
     }catch(e){ /* ignore if unsupported */ }
   }
 
-  // Map / path
+  // Confetti
+  function confettiBurst(n=60){
+    const layer = $('confetti');
+    for(let i=0;i<n;i++){
+      const el = document.createElement('i');
+      el.style.left = Math.random()*100 + 'vw';
+      el.style.background = ['gold','#d4af37','#ffd54a','#f5c36b'][i%4];
+      el.style.animationDelay = (Math.random()*0.25)+'s';
+      el.style.transform = `translateY(${Math.random()*-40}px) rotate(${Math.random()*180}deg)`;
+      layer.appendChild(el);
+      setTimeout(()=>layer.removeChild(el), 1600);
+    }
+  }
+
+  // ----- Map / path placement -----
   let path, pathLength=1;
   function initPath(){
     path = document.getElementById('trail');
     pathLength = path.getTotalLength ? path.getTotalLength() : 1000;
+    // Place treasure chest at end
+    placeAtPercent($('chest'), 0.995);
+    // Decor around map
+    drawDecor();
   }
-  function setAvatarAtPercent(p){
+  function pointAt(p){
     p = Math.max(0, Math.min(1, p));
     const d = p * pathLength;
-    const pt = path.getPointAtLength(d);
-    const av = $('avatar');
-    av.style.left = pt.x + 'px';
-    av.style.top  = pt.y + 'px';
+    return path.getPointAtLength(d);
   }
+  function placeAtPercent(el, p){
+    const pt = pointAt(p);
+    el.style.left = pt.x + 'px';
+    el.style.top  = pt.y + 'px';
+  }
+  function setAvatarAtPercent(p){ placeAtPercent($('avatar'), p); }
+
   function drawXMarks(n){
     const layer = $('xLayer'); layer.innerHTML='';
     if(n <= 0) return;
     for(let i=1;i<=n;i++){
-      const p = i/n; // equal spacing along path
-      const d = p * pathLength;
-      const pt = path.getPointAtLength(d);
+      const p = i/n;
+      const pt = pointAt(p);
       const x = document.createElement('div');
       x.className = 'x';
       x.style.left = pt.x + 'px';
@@ -176,13 +291,33 @@ beautiful</textarea>
     }
   }
 
-  // Game state
+  function drawDecor(){
+    const layer = $('decorLayer'); layer.innerHTML = '';
+    // Place a few themed items along/near the trail
+    const svgNS = "http://www.w3.org/2000/svg";
+    function placeUse(id, p, dx=0, dy=0, scale=1, rotate=0){
+      const use = document.createElementNS(svgNS, 'svg');
+      use.setAttribute('viewBox','-25 -25 50 50');
+      use.style.position = 'absolute'; use.style.transform = `translate(-50%,-50%) rotate(${rotate}deg) scale(${scale})`;
+      const pt = pointAt(p);
+      use.style.left = (pt.x + dx) + 'px';
+      use.style.top  = (pt.y + dy) + 'px';
+      use.innerHTML = `<use href="#${id}"></use>`;
+      layer.appendChild(use);
+    }
+    placeUse('palm', .12, -30, -40, 1.2);
+    placeUse('ship', .32, 40, 50, 1.1);
+    placeUse('skull', .58, -40, 30, 1.1);
+    placeUse('compass', .78, 60, -40, 1);
+  }
+
+  // ----- Game state -----
   let baseList = []; // strings
   let queue = [];    // [{raw,key,mastered:false}]
   let total = 0;
   let current = null;
   let stats = {correct:0, wrong:0, attempts:0};
-  let stepIndex = 0; // 0..total, moves along path
+  let stepIndex = 0; // 0..total
   let speakLock = false;
 
   function repeats(){ return Math.max(0, stats.attempts - total); }
@@ -191,7 +326,7 @@ beautiful</textarea>
     const parts = text.split(/[,\n]+/).map(s=>s.trim()).filter(Boolean);
     const seen = new Set(); const out=[];
     for(const raw of parts){
-      const key = normalize(raw);
+      const key = raw.toLowerCase().trim();
       if(!key || seen.has(key)) continue;
       seen.add(key); out.push(raw);
     }
@@ -248,6 +383,9 @@ beautiful</textarea>
       $('feedback').textContent = `✅ Correct: ${current.raw}`;
       $('feedback').className = 'good';
 
+      // random progress sfx
+      maybeRandomSFX();
+
       // progress forward one X
       stepIndex = Math.min(total, stepIndex + 1);
       setAvatarAtPercent(stepIndex/total);
@@ -263,6 +401,9 @@ beautiful</textarea>
       $('feedback').textContent = `❌ Oops. The word was “${current.raw}”. We'll try it again soon.`;
       $('feedback').className = 'bad';
 
+      // small "thud" drum effect
+      sfx.drum();
+
       // move one step back
       stepIndex = Math.max(0, stepIndex - 1);
       setAvatarAtPercent(stepIndex/total);
@@ -274,7 +415,6 @@ beautiful</textarea>
 
       updateStats();
       $('answer').value = '';
-      // Only speak the new current word once
       next(true);
     }
   }
@@ -287,6 +427,10 @@ beautiful</textarea>
     if(currBest===null || score < Number(currBest)){ localStorage.setItem(key, String(score)); }
     $('statBest').textContent = localStorage.getItem(key);
     $('feedback').innerHTML = `🎉 You found the treasure! Repeats (score): <b>${score}</b>. Best: <b>${localStorage.getItem(key)}</b>.`;
+
+    // Celebration
+    confettiBurst(80);
+    sfx.treasure();
   }
 
   // Events
@@ -301,8 +445,8 @@ beautiful</textarea>
     if(baseList.length === 0){ alert('Paste a word list first.'); return; }
     startRound(true);
   });
-  $('btnHear').addEventListener('click', ()=>{ if(current) speak(current.raw); });
-  $('answer').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ submit(); } });
+  $('btnHear').addEventListener('click', ()=>{ if(current){ try{ ctx().resume(); }catch(e){} speak(current.raw); } });
+  $('answer').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ submit(); }});
 
   // Initialize best
   const best = localStorage.getItem('treasure_best_repeats');
