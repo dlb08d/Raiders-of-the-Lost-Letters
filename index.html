@@ -47,7 +47,7 @@
 
   /* Layer ordering */
   svg#map{ position:absolute; inset:0; z-index:2; }
-  #decorLayer{ position:absolute; inset:0; pointer-events:none; z-index:3; } /* landmarks (aligned near trail, not on it) */
+  #decorLayer{ position:absolute; inset:0; pointer-events:none; z-index:3; } /* landmarks alongside trail */
   #xLayer{ position:absolute; inset:0; pointer-events:none; z-index:4; }     /* X marks */
   #avatar, #chest{ position:absolute; transform:translate(-50%,-50%); z-index:5; }
 
@@ -69,21 +69,19 @@
     100%{opacity:0; transform:translateY(120vh) rotate(720deg)}
   }
 
-  /* Chest sparkle animation */
+  /* Chest sparkle animation (bigger & glow) */
   #sparkles { position:absolute; inset:0; pointer-events:none; z-index:6; }
   .sparkle {
-    position:absolute; width:8px; height:8px; background:radial-gradient(#fff, #ffd54a 60%, transparent 60%);
-    border-radius:50%; opacity:0; animation: twinkle 1.2s ease-out forwards;
+    position:absolute; width:12px; height:12px;
+    background:radial-gradient(circle at 50% 50%, #fff 0%, #ffe380 40%, rgba(255,211,67,.0) 70%);
+    border-radius:50%; opacity:0;
+    filter: drop-shadow(0 0 6px rgba(255,209,64,.9));
+    animation: twinkle 1.3s ease-out forwards;
   }
   @keyframes twinkle {
-    0% { transform: scale(0.2) translate(-50%,-50%); opacity: 0; }
-    20% { opacity: 1; transform: scale(1) translate(-50%,-50%); }
-    100% { opacity: 0; transform: scale(0.1) translate(-50%,-50%) translateY(-12px); }
-  }
-
-  /* Make landmarks slightly smaller on very small screens */
-  @media (max-width: 420px){
-    #decorLayer svg { transform: translate(-50%,-50%) scale(0.8) !important; }
+    0% { transform: translate(-50%,-50%) scale(0.2); opacity: 0; }
+    15% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%,-64%) scale(0.1); }
   }
 
   .good{ color:var(--good); } .bad{ color:var(--bad); }
@@ -93,7 +91,7 @@
 <body>
   <header>
     <h1>Raiders of the Lost Letters</h1>
-    <div class="tag">Spell your way across the map! ❌ marks each word. Landmarks appear alongside the trail; treasure chest sparkles at the end.</div>
+    <div class="tag">Spell your way across the map! ❌ marks each word. Small landmarks appear along the trail; treasure chest sparkles at the end.</div>
   </header>
 
   <main class="wrap grid">
@@ -121,7 +119,7 @@ beautiful</textarea>
       <div class="map-box">
         <svg id="map" viewBox="0 0 1000 240" preserveAspectRatio="none" aria-hidden="true">
           <defs>
-            <!-- Landmark icon set (smaller, simple) -->
+            <!-- Landmark icon set (tiny, crisp) -->
             <g id="palm">
               <rect x="-2" y="0" width="4" height="22" fill="#6b4a2a"/>
               <path d="M0,0 C-14,4 -10,-6 0,-5 C10,-6 14,4 0,0 Z" fill="#2f7d3b"/>
@@ -299,7 +297,6 @@ beautiful</textarea>
     return path.getPointAtLength(d);
   }
   function tangentAt(p){
-    // compute tangent using a small delta
     const delta = 0.002;
     const p1 = pointAt(Math.max(0, p - delta));
     const p2 = pointAt(Math.min(1, p + delta));
@@ -310,7 +307,6 @@ beautiful</textarea>
   }
   function normalAt(p){
     const {tx, ty} = tangentAt(p);
-    // left-hand normal
     return { nx: -ty, ny: tx };
   }
   function placeAtPercent(el, p){
@@ -335,39 +331,51 @@ beautiful</textarea>
     }
   }
 
+  // landmark size helper based on container width
+  function landmarkSizePx(){
+    const w = document.querySelector('.map-box').clientWidth || 800;
+    if (w < 420) return 16;         // phones
+    if (w < 768) return 18;         // small tablets
+    if (w < 1100) return 22;        // laptops
+    return 26;                      // large screens
+  }
+
   // Random landmarks placed alongside (offset from) the trail between X's
   function drawRandomLandmarks(n){
     const layer = $('decorLayer'); layer.innerHTML = '';
     const svgNS = "http://www.w3.org/2000/svg";
     const iconIds = ['palm','pine','skull','fire','compass','rock','barrel','tent'];
+    const size = landmarkSizePx();
 
     const segments = Math.max(1, n);
     for(let i=0;i<segments;i++){
-      const landmarksThisSeg = Math.random() < 0.75 ? 1 : 0; // 75% segments get 1
-      for(let k=0;k<landmarksThisSeg;k++){
+      const add = Math.random() < 0.75 ? 1 : 0; // 75% segments get one landmark
+      for(let k=0;k<add;k++){
         const id = iconIds[Math.floor(Math.random()*iconIds.length)];
 
-        // place between i/n and (i+1)/n
+        // place between i/n and (i+1)/n but away from X's
         const startP = i/n;
         const endP   = Math.min(1, (i+1)/n);
-        const p = startP + 0.1*(endP-startP) + Math.random() * 0.6*(endP - startP); // avoid X overlap
+        const p = startP + 0.15*(endP-startP) + Math.random() * 0.5*(endP - startP);
         const base = pointAt(p);
         const {nx, ny} = normalAt(p);
 
-        // offset perpendicular to trail so it doesn't cover the dashed line
+        // perpendicular offset so it never sits on the trail
         const side = Math.random() < 0.5 ? -1 : 1;
-        const dist = 22 + Math.random()*14; // 22-36px offset
+        const distBase = (document.querySelector('.map-box').clientWidth > 900) ? 34 : 28;
+        const dist = distBase + Math.random()*14; // 28–48px
         const dx = nx * dist * side;
         const dy = ny * dist * side;
 
         const el = document.createElementNS(svgNS, 'svg');
         el.setAttribute('viewBox','-25 -25 50 50');
         el.style.position = 'absolute';
-        const scale = 0.55 + Math.random()*0.2; // 0.55 - 0.75 (smaller)
-        const rot = (Math.random()*18 - 9);
+        el.style.width = size + 'px';
+        el.style.height = size + 'px';
+        const rot = (Math.random()*16 - 8);
         el.style.left = (base.x + dx) + 'px';
         el.style.top  = (base.y + dy) + 'px';
-        el.style.transform = `translate(-50%,-50%) rotate(${rot}deg) scale(${scale})`;
+        el.style.transform = `translate(-50%,-50%) rotate(${rot}deg)`;
         el.style.opacity = 0.95;
         el.innerHTML = `<use href="#${id}"></use>`;
         layer.appendChild(el);
@@ -387,17 +395,17 @@ beautiful</textarea>
       s.className = 'sparkle';
       const cx = rect.left - mapRect.left + rect.width/2;
       const cy = rect.top - mapRect.top + rect.height/2;
-      const r = 36 * Math.random();
+      const r = 48 * Math.random(); // a bit wider
       const angle = Math.random()*Math.PI*2;
       s.style.left = (cx + r*Math.cos(angle)) + 'px';
       s.style.top  = (cy + r*Math.sin(angle)) + 'px';
-      s.style.animationDelay = (Math.random()*0.3)+'s';
+      s.style.animationDelay = (Math.random()*0.35)+'s';
       layer.appendChild(s);
-      setTimeout(()=>{ if(s.parentNode) s.parentNode.removeChild(s); }, 1400);
+      setTimeout(()=>{ if(s.parentNode) s.parentNode.removeChild(s); }, 1500);
     }
 
-    for(let i=0;i<12;i++) spawnOne();
-    setTimeout(()=>{ for(let i=0;i<10;i++) spawnOne(); }, 320);
+    for(let i=0;i<20;i++) spawnOne();
+    setTimeout(()=>{ for(let i=0;i<16;i++) spawnOne(); }, 300);
   }
 
   // Game state
