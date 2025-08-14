@@ -518,16 +518,18 @@ beautiful</textarea>
     const h = Math.max(140, Math.floor(rect.height));
     canvas.width = Math.floor(w * dpr);
     canvas.height = Math.floor(h * dpr);
-    ctx2d.setTransform(dpr,0,0,dpr,0,0);
+    // IMPORTANT: keep transform at identity; we will draw in CSS pixels and handle DPR in redraw()
+    ctx2d.setTransform(1,0,0,1,0,0);
     redraw();
   }
 
   function redraw(){
-    // clear
+    // clear full device-pixel canvas
+    ctx2d.setTransform(1,0,0,1,0,0);
     ctx2d.clearRect(0,0,canvas.width,canvas.height);
+    // draw in CSS pixels by scaling by DPR
     ctx2d.save();
-    ctx2d.scale(dpr,dpr);
-    // draw strokes
+    ctx2d.scale(dpr, dpr);
     ctx2d.lineCap = 'round'; ctx2d.lineJoin='round';
     ctx2d.lineWidth = 4; ctx2d.strokeStyle = '#3b2a15';
     for(const s of strokes){
@@ -544,6 +546,7 @@ beautiful</textarea>
     const r = canvas.getBoundingClientRect();
     const x = (e.clientX ?? (e.touches && e.touches[0].clientX)) - r.left;
     const y = (e.clientY ?? (e.touches && e.touches[0].clientY)) - r.top;
+    // Return CSS-pixel coords (no DPR multiply here)
     return {x, y};
   }
 
@@ -593,6 +596,7 @@ beautiful</textarea>
   // =====================
 
   // Game state
+  let path, pathLength=1;
   let baseList = [];
   let queue = [];
   let total = 0;
@@ -735,13 +739,6 @@ beautiful</textarea>
     setAvatarAtPercent(stepIndex/(total||1));
     placeAtPercent($('chest'), 0.995);
   });
-
-  // Init path after DOM ready
-  function initPath(){
-    path = document.getElementById('trail');
-    pathLength = path.getTotalLength ? path.getTotalLength() : 1000;
-    placeAtPercent($('chest'), 0.995);
-  }
 })();
 </script>
 </body>
