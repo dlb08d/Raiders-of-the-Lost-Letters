@@ -40,29 +40,28 @@
 
   /* Treasure map */
   .map-box{
-    position:relative; width:100%; height:240px;  /* TALLER */
+    position:relative; width:100%; height:240px;
     background:linear-gradient(180deg,#e8d3a1,#d6b97b);
     border:3px solid var(--border); border-radius:16px; overflow:hidden;
   }
-  svg#map{ position:absolute; inset:0; }
+
+  /* Layer ordering with z-index */
+  #decorLayer{ position:absolute; inset:0; pointer-events:none; z-index:1; }
+  svg#map{ position:absolute; inset:0; z-index:2; }
+  #xLayer{ position:absolute; inset:0; pointer-events:none; z-index:3; }
+  #avatar, #chest{ position:absolute; transform:translate(-50%,-50%); z-index:4; }
+
   #trail{ stroke:var(--trail); stroke-width:9; fill:none; stroke-linecap:round; stroke-dasharray:16 18; }
 
-  /* Layers */
-  #xLayer, #decorLayer{ position:absolute; inset:0; pointer-events:none; }
   .x{ position:absolute; width:14px; height:14px; transform:translate(-50%,-50%) rotate(45deg); }
   .x:before,.x:after{ content:""; position:absolute; left:50%; top:50%; width:2px; height:16px; background:var(--x);
                        transform:translate(-50%,-50%) rotate(45deg) }
   .x:after{ transform:translate(-50%,-50%) rotate(-45deg) }
 
-  /* Avatar */
-  #avatar{ position:absolute; width:72px; height:72px; transform:translate(-50%,-50%);
-           filter:drop-shadow(0 6px 6px rgba(0,0,0,.25)); }
+  #avatar{ width:72px; height:72px; filter:drop-shadow(0 6px 6px rgba(0,0,0,.25)); }
+  #chest{ width:80px; height:80px; filter:drop-shadow(0 6px 6px rgba(0,0,0,.25)); }
 
-  /* Treasure chest at end */
-  #chest{ position:absolute; width:80px; height:80px; transform:translate(-50%,-50%);
-          filter:drop-shadow(0 6px 6px rgba(0,0,0,.25)); }
-
-  /* Confetti celebration */
+  /* Confetti */
   .confetti{ position:fixed; inset:0; pointer-events:none; z-index:9999; }
   .confetti i{ position:absolute; width:10px; height:10px; background:gold; opacity:0; animation:fall 1.4s ease forwards; }
   @keyframes fall{
@@ -103,38 +102,35 @@ beautiful</textarea>
     <!-- Map -->
     <section class="panel grid">
       <div class="map-box">
+        <div id="decorLayer"></div>
         <svg id="map" viewBox="0 0 1000 240" preserveAspectRatio="none" aria-hidden="true">
           <defs>
-            <!-- simple palm shape -->
+            <!-- smaller, subtle map art -->
             <g id="palm">
-              <rect x="-2" y="0" width="4" height="26" fill="#7a4f21"/>
-              <path d="M0,0 C-18,4 -12,-8 0,-6 C12,-8 18,4 0,0 Z" fill="#2f7d3b"/>
-              <path d="M0,-2 C-14,2 -9,-8 0,-6 C9,-8 14,2 0,-2 Z" fill="#3f9d4d"/>
+              <rect x="-2" y="0" width="4" height="22" fill="#7a4f21" opacity="0.85"/>
+              <path d="M0,0 C-14,4 -10,-6 0,-5 C10,-6 14,4 0,0 Z" fill="#2f7d3b" opacity="0.9"/>
+              <path d="M0,-2 C-10,2 -7,-6 0,-5 C7,-6 10,2 0,-2 Z" fill="#3f9d4d" opacity="0.9"/>
             </g>
-            <!-- ship silhouette -->
             <g id="ship">
-              <path d="M-18,12 h36 l-6,8 h-24z" fill="#5a3f1f"/>
-              <rect x="-3" y="-2" width="6" height="14" fill="#5a3f1f"/>
-              <path d="M3,10 l14,-10 v14 z" fill="#d9c08c"/>
-              <path d="M-3,10 l-14,-10 v14 z" fill="#caae74"/>
+              <path d="M-14,10 h28 l-5,7 h-18z" fill="#5a3f1f" opacity="0.85"/>
+              <rect x="-2" y="-1" width="4" height="12" fill="#5a3f1f" opacity="0.85"/>
+              <path d="M2,8 l12,-8 v12 z" fill="#d9c08c" opacity="0.85"/>
+              <path d="M-2,8 l-12,-8 v12 z" fill="#caae74" opacity="0.85"/>
             </g>
-            <!-- skull cave -->
             <g id="skull">
-              <path d="M0,0 a18,14 0 1,0 0.1,0" fill="#a98e6b"/>
-              <circle cx="-6" cy="-4" r="3" fill="#2a2115"/>
-              <circle cx="6" cy="-4" r="3" fill="#2a2115"/>
-              <rect x="-2" y="2" width="4" height="6" fill="#2a2115"/>
+              <path d="M0,0 a14,10 0 1,0 0.1,0" fill="#a98e6b" opacity="0.9"/>
+              <circle cx="-5" cy="-3" r="2.4" fill="#2a2115"/>
+              <circle cx="5" cy="-3" r="2.4" fill="#2a2115"/>
+              <rect x="-1.6" y="1.5" width="3.2" height="5" fill="#2a2115"/>
             </g>
-            <!-- compass rose -->
             <g id="compass">
-              <circle cx="0" cy="0" r="10" fill="none" stroke="#7a4f21" stroke-width="2"/>
-              <path d="M0,-10 L3,0 L0,10 L-3,0 Z" fill="#caa33a"/>
+              <circle cx="0" cy="0" r="8" fill="none" stroke="#7a4f21" stroke-width="2" opacity="0.9"/>
+              <path d="M0,-8 L2.4,0 L0,8 L-2.4,0 Z" fill="#caa33a" opacity="0.9"/>
             </g>
           </defs>
           <path id="trail" d="M60,180 C160,50 260,220 360,140 S560,40 660,140 820,220 920,140" />
         </svg>
 
-        <div id="decorLayer"></div>
         <div id="xLayer"></div>
 
         <!-- Avatar (explorer) -->
@@ -193,7 +189,7 @@ beautiful</textarea>
     return a;
   }
 
-  // ----- Web Audio Sound Effects -----
+  // ----- SFX -----
   let audioCtx;
   function ctx(){ return audioCtx || (audioCtx = new (window.AudioContext||window.webkitAudioContext)()); }
   function tone(f=440,d=0.12,type='sine',vol=0.25){
@@ -202,7 +198,6 @@ beautiful</textarea>
     o.type=type; o.frequency.value=f; g.gain.value=vol;
     o.connect(g); g.connect(ac.destination); o.start(); setTimeout(()=>o.stop(), d*1000);
   }
-  // noise burst (for drums)
   function noise(dur=0.12, vol=0.2){
     const ac = ctx();
     const buffer = ac.createBuffer(1, ac.sampleRate*dur, ac.sampleRate);
@@ -216,20 +211,17 @@ beautiful</textarea>
     coin(){ tone(900,.08,'square',.22); setTimeout(()=>tone(1350,.08,'square',.2),60); },
     whoosh(){ tone(220,.05,'sine',.12); setTimeout(()=>tone(440,.06,'sine',.14),60); setTimeout(()=>tone(660,.08,'sine',.16),120); },
     drum(){ noise(.12,.22); setTimeout(()=>noise(.09,.18),120); },
-    // Adventure-style treasure fanfare (no copyrighted audio, just tones)
     treasure(){
-      const seq = [392,523,659,784,988,1175,1319]; // rising arpeggio
+      const seq = [392,523,659,784,988,1175,1319];
       seq.forEach((f,i)=>setTimeout(()=>tone(f,.14,'triangle',.25), i*120));
-      setTimeout(()=>{ noise(.2,.15); }, seq.length*120 + 80); // soft "crash"
+      setTimeout(()=>{ noise(.2,.15); }, seq.length*120 + 80);
     }
   };
-
   function maybeRandomSFX(){
     const r = Math.random();
     if(r < 0.25) sfx.coin();
     else if(r < 0.45) sfx.whoosh();
     else if(r < 0.6) sfx.drum();
-    // else: silent to avoid noise overload
   }
 
   function speak(text){
@@ -238,10 +230,9 @@ beautiful</textarea>
       const u = new SpeechSynthesisUtterance(text);
       u.rate = 0.95; u.pitch = 1.0; u.lang = 'en-US';
       window.speechSynthesis.speak(u);
-    }catch(e){ /* ignore if unsupported */ }
+    }catch(e){}
   }
 
-  // Confetti
   function confettiBurst(n=60){
     const layer = $('confetti');
     for(let i=0;i<n;i++){
@@ -255,14 +246,13 @@ beautiful</textarea>
     }
   }
 
-  // ----- Map / path placement -----
+  // Map / Path
   let path, pathLength=1;
   function initPath(){
     path = document.getElementById('trail');
     pathLength = path.getTotalLength ? path.getTotalLength() : 1000;
-    // Place treasure chest at end
+    // place chest at the end
     placeAtPercent($('chest'), 0.995);
-    // Decor around map
     drawDecor();
   }
   function pointAt(p){
@@ -293,31 +283,34 @@ beautiful</textarea>
 
   function drawDecor(){
     const layer = $('decorLayer'); layer.innerHTML = '';
-    // Place a few themed items along/near the trail
     const svgNS = "http://www.w3.org/2000/svg";
-    function placeUse(id, p, dx=0, dy=0, scale=1, rotate=0){
-      const use = document.createElementNS(svgNS, 'svg');
-      use.setAttribute('viewBox','-25 -25 50 50');
-      use.style.position = 'absolute'; use.style.transform = `translate(-50%,-50%) rotate(${rotate}deg) scale(${scale})`;
+
+    function placeUse(id, p, dx=0, dy=0, scale=0.8, rotate=0){
+      // smaller scale and behind everything (decorLayer z-index=1)
+      const el = document.createElementNS(svgNS, 'svg');
+      el.setAttribute('viewBox','-25 -25 50 50');
+      el.style.position = 'absolute';
+      el.style.transform = `translate(-50%,-50%) rotate(${rotate}deg) scale(${scale})`;
       const pt = pointAt(p);
-      use.style.left = (pt.x + dx) + 'px';
-      use.style.top  = (pt.y + dy) + 'px';
-      use.innerHTML = `<use href="#${id}"></use>`;
-      layer.appendChild(use);
+      el.style.left = (pt.x + dx) + 'px';
+      el.style.top  = (pt.y + dy) + 'px';
+      el.innerHTML = `<use href="#${id}"></use>`;
+      layer.appendChild(el);
     }
-    placeUse('palm', .12, -30, -40, 1.2);
-    placeUse('ship', .32, 40, 50, 1.1);
-    placeUse('skull', .58, -40, 30, 1.1);
-    placeUse('compass', .78, 60, -40, 1);
+    // Safer offsets so they don't sit on top of the trail
+    placeUse('palm', .10, -60, -60, 0.85, -8);
+    placeUse('ship', .30, 70, 60, 0.85, 6);
+    placeUse('skull', .55, -70, 60, 0.8, -4);
+    placeUse('compass', .80, 70, -70, 0.8, 0);
   }
 
-  // ----- Game state -----
-  let baseList = []; // strings
-  let queue = [];    // [{raw,key,mastered:false}]
+  // Game state
+  let baseList = [];
+  let queue = [];
   let total = 0;
   let current = null;
   let stats = {correct:0, wrong:0, attempts:0};
-  let stepIndex = 0; // 0..total
+  let stepIndex = 0;
   let speakLock = false;
 
   function repeats(){ return Math.max(0, stats.attempts - total); }
@@ -382,15 +375,11 @@ beautiful</textarea>
       stats.correct++;
       $('feedback').textContent = `✅ Correct: ${current.raw}`;
       $('feedback').className = 'good';
-
-      // random progress sfx
       maybeRandomSFX();
 
-      // progress forward one X
       stepIndex = Math.min(total, stepIndex + 1);
       setAvatarAtPercent(stepIndex/total);
 
-      // remove mastered and continue
       queue.shift();
       updateStats();
       $('answer').value = '';
@@ -400,15 +389,11 @@ beautiful</textarea>
       stats.wrong++;
       $('feedback').textContent = `❌ Oops. The word was “${current.raw}”. We'll try it again soon.`;
       $('feedback').className = 'bad';
-
-      // small "thud" drum effect
       sfx.drum();
 
-      // move one step back
       stepIndex = Math.max(0, stepIndex - 1);
       setAvatarAtPercent(stepIndex/total);
 
-      // reinsert a few later
       queue.shift();
       const insertAt = Math.min(3, queue.length);
       queue.splice(insertAt, 0, current);
@@ -427,8 +412,6 @@ beautiful</textarea>
     if(currBest===null || score < Number(currBest)){ localStorage.setItem(key, String(score)); }
     $('statBest').textContent = localStorage.getItem(key);
     $('feedback').innerHTML = `🎉 You found the treasure! Repeats (score): <b>${score}</b>. Best: <b>${localStorage.getItem(key)}</b>.`;
-
-    // Celebration
     confettiBurst(80);
     sfx.treasure();
   }
