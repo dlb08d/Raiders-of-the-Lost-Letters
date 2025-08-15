@@ -29,6 +29,10 @@
     letter-spacing:.5px;
     font-family: "Trebuchet MS", "Palatino Linotype", Georgia, serif;
   }
+  .adventure-font{
+    font-family: "Trebuchet MS", "Palatino Linotype", Georgia, serif;
+    letter-spacing:.3px;
+  }
 
   /* Adventurous Intro below title */
   #gameIntro{
@@ -135,6 +139,7 @@
   /* Writing canvas (parchment style) */
   .write-wrap{ background:#f7e8c7; border:2px dashed #8b6a3b; border-radius:12px; padding:8px; }
   .write-toolbar{ display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+  .write-toolbar strong{ font-size:16px; }
   #writeCanvas{ width:100%; height:180px; background:
       radial-gradient(ellipse at top left, rgba(255,255,255,.6), rgba(255,255,255,0) 60%),
       radial-gradient(ellipse at bottom right, rgba(0,0,0,.06), rgba(0,0,0,0) 60%),
@@ -256,8 +261,8 @@
       <!-- Writing Canvas (default visible) -->
       <section id="writeSection" class="write-wrap">
         <div class="write-toolbar">
-          <strong>✍️ Write It</strong>
-          <button id="btnToggleWrite" type="button" class="secondary">Hide</button>
+          <strong class="adventure-font">✍️ Practice Here</strong>
+          <button id="btnToggleWrite" type="button" class="secondary adventure-font">Hide</button>
           <button id="btnUndo" type="button" class="secondary">Undo</button>
           <button id="btnClear" type="button" class="secondary">Clear</button>
         </div>
@@ -277,7 +282,7 @@
 
       <div class="controls">
         <button id="btnHear" type="button" class="secondary">🔊 Hear Word</button>
-        <button id="btnWriteToggleTop" type="button" class="secondary">✍️ Write It</button>
+        <button id="btnWriteToggleTop" type="button" class="secondary adventure-font">✍️ Practice Here</button>
       </div>
     </section>
   </main>
