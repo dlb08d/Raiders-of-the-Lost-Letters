@@ -1,871 +1,463 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Raiders of the Lost Letters</title>
-<style>
-  :root{
-    --bg:#f4e2c2; --ink:#3b2a14; --accent:#d4af37; --panel:#f7e8c7;
-    --border:#8b4513; --trail:#7a4f21; --x:#a66a2a; --good:#1f8b45; --bad:#c0392b;
-  }
-  *{box-sizing:border-box}
-  html,body{ height:100%; }
-  body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
-    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-    -webkit-tap-highlight-color: transparent;
-  }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Raiders of the Lost Letters</title>
+  <style>
+    :root{
+      --bg:#0e0b05; --panel:#1b140a; --ink:#ead7a1; --ink-2:#d8c695; --accent:#e0b85a; --good:#35d16f; --bad:#ff6464; --ui:#2a2115;
+      --btn:#3a2e1d; --btn-b:#4b3a22; --gold:#c99b3b; --muted:#cdbd90;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Arial,sans-serif; color:var(--ink);
+      background:radial-gradient(circle at 60% 0%, #3a2a13 0%, #1a140a 50%, #0e0b05 100%);
+      background-image:
+        radial-gradient(transparent 0 6px, rgba(0,0,0,.18) 7px),
+        repeating-linear-gradient(45deg, rgba(255,255,255,.03) 0 6px, rgba(0,0,0,.03) 6px 12px);
+      background-blend-mode:multiply;
+      min-height:100dvh; display:flex; align-items:flex-start; justify-content:center; padding:16px;
+    }
+    .card{ width:min(1024px,100%); background:rgba(40,29,16,.55); border:1px solid rgba(255,255,255,.07);
+      border-radius:16px; padding:16px 16px 18px; box-shadow:0 10px 30px rgba(0,0,0,.45); backdrop-filter:blur(6px);
+    }
+    h1.classic{ margin:0 0 8px; font-size:clamp(24px, 4.8vw, 40px); letter-spacing:.8px; color:transparent;
+      background:linear-gradient(180deg,#f7e3a5,#d7b75b,#946b20); -webkit-background-clip:text; background-clip:text;
+      text-shadow:0 2px 0 rgba(0,0,0,.3);
+    }
+    #intro{ margin:8px 0 12px; padding:10px; background:#fff3d4; color:#5b3a0c; border:2px solid #c89b3c; border-radius:10px;
+      font-size:clamp(14px, 1.8vw, 18px); text-align:center;
+    }
+    .muted{color:var(--muted); font-size:14px}
+    .row{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+    .stack{display:grid; gap:10px}
+    button{ background:var(--btn); border:1px solid var(--btn-b); color:var(--ink); padding:10px 14px; border-radius:10px; cursor:pointer;
+      transition:transform .06s ease,border-color .2s ease; font-size:16px; line-height:1;
+    }
+    button:hover{border-color:#705127} button:active{transform:translateY(1px)}
+    button.primary{ background:linear-gradient(180deg,#c99b3b,#a87a28); border-color:#c99b3b; color:#1a1207 }
+    button.ghost{ background:transparent }
+    select, textarea, input[type="text"]{ width:100%; background:var(--ui); border:1px solid #3a2e1d; color:var(--ink);
+      padding:10px 12px; border-radius:10px; outline:none; font-size:16px;
+    }
+    textarea{ min-height:120px; resize:vertical }
+    .hidden{display:none}
+    .center{display:grid; place-items:center; text-align:center}
+    .stat{ background:var(--ui); border:1px solid #3a2e1d; color:var(--ink); padding:6px 10px; border-radius:10px; font-size:13px }
+    .status{ min-height:22px } .status.good{color:var(--good)} .status.bad{color:var(--bad)}
+    kbd{background:var(--ui); border:1px solid #3a2e1d; border-bottom-width:3px; padding:2px 6px; border-radius:6px; font-size:12px}
 
-  /* Title (static, treasure map style) */
-  .title-wrap{ width:min(980px,94%); margin:16px auto 6px; text-align:center; }
-  .game-title{
-    margin:0;
-    font-size: clamp(28px, 5.5vw, 40px);
-    color:#c89b3c;
-    text-shadow: 2px 2px 0 #5b3a0c, 0 2px 6px rgba(0,0,0,.25);
-    letter-spacing:.5px;
-    font-family: "Trebuchet MS", "Palatino Linotype", Georgia, serif;
-  }
-  .adventure-font{ font-family: "Trebuchet MS", "Palatino Linotype", Georgia, serif; letter-spacing:.3px; }
+    /* Map area */
+    .map-wrap{ position:relative; width:100%; height:clamp(180px, 28vh, 260px); border:1px solid #3a2e1d; border-radius:14px; background:#2a2115; overflow:hidden; margin-top:6px }
+    .parchment{ position:absolute; inset:0; opacity:.22; background:
+      radial-gradient(circle at 30% 20%, #fff8 0 2px, transparent 3px),
+      radial-gradient(circle at 70% 70%, #fff8 0 2px, transparent 3px),
+      url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"100\"><defs><filter id=\"n\"><feTurbulence baseFrequency=\"0.01\" numOctaves=\"2\" seed=\"2\"/></filter></defs><rect width=\"100%\" height=\"100%\" fill=\"%23cbb37a\"/><rect width=\"100%\" height=\"100%\" fill=\"%23b99f67\" filter=\"url(%23n)\" opacity=\"0.4\"/></svg>'); background-size:cover }
+    svg#map{ position:absolute; inset:0; width:100%; height:100% }
+    #trail{ stroke:#8b5e2b; stroke-width:10; fill:none; stroke-linecap:round; stroke-dasharray:18 18 }
+    .xmark{ position:absolute; transform:translate(-50%,-50%); font-size:18px; color:#d8b46a; text-shadow:0 1px 0 #0007; pointer-events:none; z-index:2 }
+    .landmark{ position:absolute; transform:translate(-50%,-50%) rotate(0deg); filter:drop-shadow(0 2px 2px rgba(0,0,0,.5)); pointer-events:none; z-index:1 }
+    .avatar, .chest{ position:absolute; transform:translate(-50%,-50%); width:60px; height:60px; pointer-events:none; z-index:3 }
+    .avatar svg, .chest svg{ filter:drop-shadow(0 4px 3px rgba(0,0,0,.6)) }
+    .bounce{ animation:bounce .5s ease } @keyframes bounce{0%{transform:translate(-50%,-55%)}50%{transform:translate(-50%,-50%)}100%{transform:translate(-50%,-52%)}}
+    .shake{ animation:shake .35s ease } @keyframes shake{0%,100%{transform:translate(-50%,-50%)}20%{transform:translate(calc(-50% + 6px),-50%)}40%{transform:translate(calc(-50% - 6px),-50%)}60%{transform:translate(calc(-50% + 4px),-50%)}80%{transform:translate(calc(-50% - 4px),-50%)}}
 
-  /* Intro */
-  #gameIntro{
-    margin: 10px auto 6px;
-    max-width: 980px;
-    width: 94%;
-    background:#fff3d4;
-    border:2px solid #c89b3c;
-    border-radius:10px;
-    padding:10px 12px;
-    color:#5b3a0c;
-    text-align:center;
-    line-height:1.25;
-    box-shadow: 0 4px 12px rgba(0,0,0,.08);
-    opacity:0; transform: translateY(-6px) scale(0.995);
-  }
-  #gameIntro b{ color:#6a430d; }
-  @keyframes parchmentIn {
-    0%{ opacity:0; transform: translateY(-6px) scale(0.995); filter: saturate(0.8); }
-    60%{ opacity:1; transform: translateY(0) scale(1.0); filter: saturate(1); }
-    100%{ opacity:1; transform: translateY(0) scale(1.0); }
-  }
-  .intro-show{ animation: parchmentIn .7s ease-out forwards; }
-
-  .wrap{ width:min(980px, 94%); margin:0 auto 16px; position:relative; z-index:5; }
-
-  .grid{ display:grid; gap:10px; }
-  .panel{ background:var(--panel); border:2px solid var(--border); border-radius:14px; padding:12px; position:relative; z-index:5; }
-
-  textarea{
-    width:100%; min-height:120px; resize:vertical;
-    border:2px solid var(--border); border-radius:10px; padding:10px;
-    font-size:16px; background:#fffdf5; color:#2a1d0e;
-  }
-  .controls{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; pointer-events:auto; position:relative; z-index:6; }
-  button{
-    padding:12px 14px; border:none; border-radius:12px; background:var(--accent); color:#1f1408;
-    cursor:pointer; font-size:16px; min-height:44px; touch-action:manipulation;
-  }
-  button.secondary{ background:#caa33a }
-  input[type="text"]{
-    flex:1; padding:12px 12px; border:2px solid var(--border); border-radius:12px; font-size:18px; background:#fffdf5;
-    min-height:44px;
-  }
-  select{
-    padding:10px 12px; border:2px solid var(--border); border-radius:12px; background:#fffdf5; font-size:16px; min-height:44px;
-  }
-  .answer-row{ display:flex; gap:10px; align-items:center; pointer-events:auto; position:relative; z-index:6; }
-  .stats{ display:flex; flex-wrap:wrap; gap:8px; font-size:13px; color:#5a4123; }
-  .pill{ padding:6px 10px; background:#f9edcf; border:1px solid #d2b473; border-radius:999px; }
-
-  /* Map */
-  .map-box{
-    position:relative; width:100%; height:260px;
-    background:linear-gradient(180deg,#e8d3a1,#d6b97b);
-    border:3px solid var(--border); border-radius:16px; overflow:hidden; pointer-events:auto; z-index:4;
-  }
-  @media (max-width:430px){
-    .map-box{ height:300px; }
-    .controls button, .controls select{ flex:1 1 48%; }
-  }
-  @media (min-width:900px){
-    .map-box{ height:260px; }
-  }
-
-  /* Layers */
-  svg#map{ position:absolute; inset:0; z-index:2; pointer-events:none; }
-  #decorLayer{ position:absolute; inset:0; pointer-events:none; z-index:3; }
-  #xLayer{ position:absolute; inset:0; pointer-events:none; z-index:4; }
-  #avatar, #chest{ position:absolute; transform:translate(-50%,-50%); z-index:5; pointer-events:none; }
-
-  #trail{ stroke:var(--trail); stroke-width:9; fill:none; stroke-linecap:round; stroke-dasharray:16 18; }
-
-  .x{ position:absolute; width:14px; height:14px; transform:translate(-50%,-50%) rotate(45deg); }
-  .x:before,.x:after{ content:""; position:absolute; left:50%; top:50%; width:2px; height:16px; background:var(--x);
-                       transform:translate(-50%,-50%) rotate(45deg) }
-  .x:after{ transform:translate(-50%,-50%) rotate(-45deg) }
-
-  #avatar{ width:72px; height:72px; filter:drop-shadow(0 6px 6px rgba(0,0,0,.25)); }
-  #chest{ width:80px; height:80px; filter:drop-shadow(0 6px 6px rgba(0,0,0,.25)); }
-
-  /* Confetti */
-  .confetti{ position:fixed; inset:0; pointer-events:none; z-index:9999; }
-  .confetti i{ position:absolute; width:10px; height:10px; background:gold; opacity:0; animation:fall 1.4s ease forwards; }
-  @keyframes fall{
-    0%{opacity:1; transform:translateY(-20px) rotate(0)}
-    100%{opacity:0; transform:translateY(120vh) rotate(720deg)}
-  }
-
-  /* Sparkles */
-  #sparkles { position:absolute; inset:0; pointer-events:none; z-index:6; }
-  .sparkle {
-    position:absolute; width:12px; height:12px;
-    background:radial-gradient(circle at 50% 50%, #fff 0%, #ffe380 40%, rgba(255,211,67,.0) 70%);
-    border-radius:50%; opacity:0;
-    filter: drop-shadow(0 0 6px rgba(255,209,64,.9));
-    animation: twinkle 1.3s ease-out forwards;
-  }
-  @keyframes twinkle {
-    0% { transform: translate(-50%,-50%) scale(0.2); opacity: 0; }
-    15% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
-    100% { opacity: 0; transform: translate(-50%,-64%) scale(0.1); }
-  }
-
-  /* Canvas */
-  .write-wrap{ background:#f7e8c7; border:2px dashed #8b6a3b; border-radius:12px; padding:8px; }
-  .write-toolbar{ display:flex; gap:8px; align-items:center; margin-bottom:6px; }
-  .write-toolbar strong{ font-size:16px; }
-  #writeCanvas{ width:100%; height:180px; background:
-      radial-gradient(ellipse at top left, rgba(255,255,255,.6), rgba(255,255,255,0) 60%),
-      radial-gradient(ellipse at bottom right, rgba(0,0,0,.06), rgba(0,0,0,0) 60%),
-      repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(0,0,0,.04) 29px, transparent 30px);
-    border:2px solid #8b6a3b; border-radius:10px; touch-action:none;
-  }
-  .write-hidden{ display:none; }
-
-  .good{ color:var(--good); } .bad{ color:var(--bad); }
-  .sr-only{ position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden; }
-
-  /* Music indicator */
-  .music-pill{ padding:6px 10px; border-radius:999px; border:1px solid #d2b473; background:#fff7df; font-size:13px; display:inline-flex; align-items:center; gap:6px; }
-</style>
+    /* Practice pad */
+    #practiceWrap{ background:#251d11; border:1px solid #3a2e1d; border-radius:12px; padding:8px }
+    #canvas{ width:100%; height:200px; background:repeating-linear-gradient(0deg,#1f1a10 0 2px, #231b11 2px 4px); border:1px dashed #5a492f; border-radius:8px; display:block; touch-action:none }
+    .toolbar{ display:flex; gap:8px; align-items:center; justify-content:space-between; margin-top:6px }
+  </style>
 </head>
 <body>
-  <div class="title-wrap">
-    <h1 class="game-title">Raiders of the Lost Letters</h1>
-  </div>
+  <div class="card" role="application" aria-label="Raiders of the Lost Letters game">
+    <h1 class="classic">Raiders of the Lost Letters</h1>
+    <div id="intro">🗺️ Welcome, brave raider! Spell each word to guide your explorer across the map and claim the treasure. Mistakes slow the journey, but every correct word marks your map. Can you reach the chest with the fewest repeats?</div>
 
-  <div id="gameIntro">
-    🗺️ <b>Welcome, Brave Raider!</b> Your quest begins now. Spell each word to uncover the path to the hidden treasure. Beware—mistakes will slow your journey. Every correct answer <b>marks your map!</b>
-  </div>
-
-  <main class="wrap grid">
-    <section class="panel grid">
-      <label for="listBox"><strong>Word list</strong> (one per line or commas)</label>
-      <textarea id="listBox" placeholder="Paste your spelling words here..."></textarea>
-
-      <div class="controls">
-        <select id="chapterSelect" aria-label="Choose Chapter">
-          <option value="">📕 Choose Chapter…</option>
-        </select>
-        <button id="btnLoadChapter" type="button" class="secondary">Load Chapter</button>
-        <button id="btnUseList" type="button">Use These Words (Shuffle)</button>
-        <button id="btnHuntAgain" type="button" class="secondary">Hunt Again (Shuffle)</button>
-        <button id="btnHear" type="button" class="secondary">🔊 Hear Word</button>
-        <button id="btnWriteToggleTop" type="button" class="secondary adventure-font">✍️ Practice Here</button>
-        <button id="btnMusic" type="button" class="secondary">🔇 Music</button>
+    <!-- Stats -->
+    <header class="row" style="justify-content:space-between; margin-bottom:8px">
+      <div class="row">
+        <div class="stat" id="statTotal">Words: 0</div>
+        <div class="stat" id="statMastered">Mastered: 0</div>
+        <div class="stat" id="statRepeats">Repeats: 0</div>
+        <div class="stat" id="statBest">Personal Best: —</div>
       </div>
+    </header>
 
-      <details class="manage">
-        <summary>➕ Manage Chapters (Paste & Save)</summary>
-        <p>Paste chapters using either format:</p>
-        <ol>
-          <li><code>Chapter 1: word1, word2, word3</code></li>
-          <li><code>Chapter 2</code> on its own line, then words on next lines</li>
-        </ol>
-        <textarea id="importBox" placeholder="Example:
-Chapter 1: jungle, treasure, map, canyon
-Chapter 2
-adventure
-rhythm
-whisper"></textarea>
-        <div class="controls" style="margin-top:8px">
-          <button id="btnImport" type="button">Save Chapters</button>
-          <button id="btnExport" type="button" class="secondary">Export My Chapters</button>
-          <button id="btnClearChapters" type="button" class="secondary">Clear My Chapters</button>
-        </div>
-      </details>
-    </section>
-
-    <section class="panel grid">
-      <div class="map-box" id="mapBox">
-        <svg id="map" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true">
-          <defs>
-            <g id="palm"><rect x="-2" y="0" width="4" height="22" fill="#6b4a2a"/><path d="M0,0 C-14,4 -10,-6 0,-5 C10,-6 14,4 0,0 Z" fill="#2f7d3b"/><path d="M0,-2 C-10,2 -7,-6 0,-5 C7,-6 10,2 0,-2 Z" fill="#3e9a4a"/></g>
-            <g id="pine"><rect x="-1.5" y="8" width="3" height="12" fill="#6b4a2a"/><path d="M0,0 L10,12 L-10,12 Z" fill="#2f6b3b"/><path d="M0,-6 L8,4 L-8,4 Z" fill="#3c8d4c"/></g>
-            <g id="skull"><path d="M0,0 a14,10 0 1,0 0.1,0" fill="#a98e6b"/><circle cx="-5" cy="-3" r="2.4" fill="#2a2115"/><circle cx="5" cy="-3" r="2.4" fill="#2a2115"/><rect x="-1.6" y="1.5" width="3.2" height="5" fill="#2a2115"/></g>
-            <g id="compass"><circle cx="0" cy="0" r="8" fill="none" stroke="#7a4f21" stroke-width="2"/><path d="M0,-8 L2.4,0 L0,8 L-2.4,0 Z" fill="#caa33a"/></g>
-            <g id="fire"><path d="M-10,10 l20,0 l-6,4 l-8,0 z" fill="#6b3f1f"/><path d="M0,0 C-6,4 -4,-4 0,-6 C4,-4 6,4 0,0 Z" fill="#ff8a00"/><path d="M0,-2 C-4,2 -3,-3 0,-4 C3,-3 4,2 0,-2 Z" fill="#ffd54a"/></g>
-            <g id="rock"><path d="M-10,6 L-6,-2 L6,-2 L10,6 Z" fill="#8b7b6d"/></g>
-            <g id="barrel"><rect x="-6" y="-8" width="12" height="16" rx="2" fill="#7a4f21"/><rect x="-6" y="-5" width="12" height="2" fill="#5a3a19"/><rect x="-6" y="3" width="12" height="2" fill="#5a3a19"/></g>
-            <g id="tent"><path d="M-12,8 L0,-8 L12,8 Z" fill="#b07d38"/><path d="M0,8 L0,-8" stroke="#8a5f2a" stroke-width="2"/></g>
-          </defs>
-          <path id="trail" d="M60,210 C160,70 260,240 360,170 S560,90 660,170 820,240 920,170" />
-        </svg>
-
-        <div id="decorLayer"></div>
-        <div id="xLayer"></div>
-
-        <svg id="avatar" viewBox="0 0 80 80" aria-hidden="true">
-          <ellipse cx="40" cy="22" rx="26" ry="8" fill="#4a3926"/>
-          <path d="M28 12 q12-8 24 0 l-4 14 h-16z" fill="#3a2c1e"/>
-          <circle cx="40" cy="32" r="10" fill="#f0c799"/>
-          <path d="M26 44 h28 l6 22 h-40z" fill="#5b3e24"/>
-          <rect x="36" y="44" width="8" height="8" fill="#d9d2c2"/>
-          <rect x="24" y="54" width="32" height="4" fill="#3b2a15"/>
-          <path d="M28 44 l24 22" stroke="#caa06a" stroke-width="4"/>
-        </svg>
-
-        <svg id="chest" viewBox="0 0 80 80" aria-hidden="true">
-          <rect x="10" y="30" width="60" height="30" rx="4" fill="#6b3f1f" stroke="#2c1b0e" stroke-width="3"/>
-          <path d="M10 30 q30-18 60 0 v8 h-60z" fill="#8c5228" stroke="#2c1b0e" stroke-width="3"/>
-          <rect x="37" y="40" width="6" height="10" fill="#c99b3b" />
-        </svg>
-
-        <div id="sparkles"></div>
+    <!-- Setup: layout per your request -->
+    <section id="setup" class="stack">
+      <!-- Top row: Load Chapter button to the LEFT of dropdown -->
+      <div class="row">
+        <button id="loadChapterBtn">Load Chapter</button>
+        <select id="chapterSel" title="Choose Chapter"></select>
       </div>
-
-      <div class="answer-row">
-        <label class="sr-only" for="answer">Type the word</label>
-        <input id="answer" type="text" placeholder="Type the word" autocomplete="off" />
-        <button id="btnMark" type="button">❌ Mark the Map</button>
+      <!-- Second row under dropdown: Use These Words + Shuffle Again -->
+      <div class="row">
+        <button id="useWordsBtn" class="primary">Use These Words</button>
+        <button id="shuffleBtn" class="ghost">Shuffle Again</button>
       </div>
-
-      <section id="writeSection" class="write-wrap">
-        <div class="write-toolbar">
-          <strong class="adventure-font">✍️ Practice Here</strong>
-          <button id="btnToggleWrite" type="button" class="secondary adventure-font">Hide</button>
-          <button id="btnUndo" type="button" class="secondary">Undo</button>
-          <button id="btnClear" type="button" class="secondary">Clear</button>
-        </div>
-        <canvas id="writeCanvas"></canvas>
-      </section>
-
-      <div id="feedback"></div>
-
-      <div class="stats">
-        <div class="pill">Words: <span id="statTotal">0</span></div>
-        <div class="pill">Mastered: <span id="statMastered">0</span></div>
-        <div class="pill">Correct: <span id="statCorrect">0</span></div>
-        <div class="pill">Wrong: <span id="statWrong">0</span></div>
-        <div class="pill">Repeats (score): <span id="statRepeats">0</span></div>
-        <div class="pill">Best: <span id="statBest">—</span></div>
-        <div class="music-pill">🎵 Music: <span id="musicState">Off</span></div>
+      <!-- Then the word list textarea (dropdown is above it) -->
+      <textarea id="wordInput" placeholder="Paste your weekly words here…"></textarea>
+      <!-- Small options -->
+      <div class="row">
+        <label class="muted"><input type="checkbox" id="sayWords" checked> Speak the word</label>
       </div>
     </section>
-  </main>
 
-  <div id="confetti" class="confetti"></div>
-  <div id="initBanner">Initializing…</div>
+    <!-- Play area -->
+    <section id="play" class="stack hidden" aria-live="polite">
+      <div class="map-wrap" id="mapWrap" aria-hidden="true">
+        <div class="parchment"></div>
+        <svg id="map" viewBox="0 0 1000 220" preserveAspectRatio="none">
+          <path id="trail" d="M60,160 C150,60 260,200 340,120 S520,40 600,120 760,200 880,120" />
+        </svg>
+        <div class="avatar" id="avatar" style="left:60px;top:160px">
+          <svg viewBox="0 0 80 80" aria-hidden="true">
+            <ellipse cx="40" cy="26" rx="26" ry="8" fill="#4a3926"/>
+            <path d="M28 15 q12-8 24 0 l-4 14 h-16z" fill="#3a2c1e"/>
+            <circle cx="40" cy="36" r="10" fill="#f0c799"/>
+            <path d="M26 48 h28 l6 22 h-40z" fill="#5b3e24"/>
+            <rect x="36" y="48" width="8" height="8" fill="#d9d2c2"/>
+            <rect x="24" y="58" width="32" height="4" fill="#3b2a15"/>
+            <path d="M28 48 l24 22" stroke="#caa06a" stroke-width="4"/>
+          </svg>
+        </div>
+        <div class="chest" id="chest">
+          <svg viewBox="0 0 80 80" aria-hidden="true">
+            <rect x="10" y="30" width="60" height="30" rx="4" fill="#6b3f1f" stroke="#2c1b0e" stroke-width="3"/>
+            <path d="M10 30 q30-18 60 0 v8 h-60z" fill="#8c5228" stroke="#2c1b0e" stroke-width="3"/>
+            <rect x="37" y="40" width="6" height="10" fill="#c99b3b" />
+          </svg>
+        </div>
+      </div>
 
-  <!-- Background Music (place the mp3 in the same folder) -->
+      <div class="center">
+        <div class="muted">Spell the word to move along the map:</div>
+        <div class="row" style="gap:8px; margin-top:6px">
+          <button id="hearBtn">🔊 Hear</button>
+          <button id="hintBtn" class="ghost">Hint</button>
+          <button id="skipBtn" class="ghost">Skip</button>
+          <button id="endBtn" class="ghost">End</button>
+        </div>
+      </div>
+
+      <label class="sr-only" for="answer">Type your spelling</label>
+      <div class="row">
+        <input id="answer" type="text" placeholder="Type the word and press Enter" autocomplete="off" style="flex:1; font-size:18px" />
+        <button id="submitBtn" class="primary">❌ Mark the Map</button>
+      </div>
+      <!-- Music mute button BELOW the type word bar -->
+      <div class="row">
+        <button id="musicBtn" class="ghost" title="Mute/unmute music and SFX">🔊 Music & SFX</button>
+      </div>
+
+      <!-- Practice Here toggle ABOVE the scratch pad -->
+      <div class="row">
+        <button id="togglePracticeBtn" class="ghost">✍️ <span>Practice Here</span></button>
+      </div>
+      <div id="practiceWrap" class="stack">
+        <canvas id="canvas"></canvas>
+        <div class="toolbar">
+          <div class="row" style="gap:8px">
+            <button id="undoBtn" class="ghost" type="button">Undo</button>
+            <button id="clearBtn" class="ghost" type="button">Clear</button>
+          </div>
+          <span class="muted">Tip: Draw with finger/mouse. Audio starts after your first tap.</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="stat" id="statCorrect">Correct: 0</div>
+        <div class="stat" id="statWrong">Wrong: 0</div>
+        <div class="stat" id="statMasteredPlay">Mastered: 0/0</div>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section id="results" class="stack hidden center">
+      <h2>🎉 You found the treasure!</h2>
+      <div id="summary" class="muted"></div>
+      <div id="bestNote" class="muted"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="restartBtn">Hunt Again</button>
+        <button id="editBtn">Edit Word List</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="confetti" style="position:fixed; inset:0; pointer-events:none"></div>
+
+  <!-- Background music: attempt autoplay; iOS fallback handled in script -->
   <audio id="bgm" src="game-over-danijel-zambo-main-version-1394-02-03.mp3" loop preload="auto"></audio>
 
 <script>
-(function(){
-  const $ = (id)=>document.getElementById(id);
-  const banner = $('initBanner');
-  function ready(msg){ banner.textContent = msg || 'Ready'; banner.classList.add('ready'); setTimeout(()=>banner.remove(), 1500); }
+(() => {
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const normalize = w => w.toLowerCase().trim().replace(/[^a-z']/g, "");
+  const shuffle = arr => arr.sort(() => Math.random() - 0.5);
 
-  // Intro animation
-  requestAnimationFrame(()=> $('gameIntro').classList.add('intro-show'));
-
-  // --------- Chapters (Prebuilt + Local) ---------
   const PREBUILT = {
-    "Chapter 1": [
-      "atlas","travel","elastic","having","satisfy","candle","captain","pasture","manage","Canada","example",
-      "fantastic","scramble","hamburger","enough","because","absent","absolute","access","accurate"
-    ],
-    "Chapter 2": [
-      "raise","volcano","radio","straight","eighth","conveyed","Savior","neighborhood","survey","usually","weight","remember",
-      "nature","repaid","faithful","reweigh","contain","unable","disobey","unclaimed"
-    ],
-    "Chapter 3": [
-      "hotel","selfish","meant","breath","instead","several","leather","Mexico","protect","already","connect","pleasant",
-      "seventeen","everybody","music","during","envelope","entrance","expedition","exclamation"
-    ],
-    "Chapter 4": [
-      "enemies","beaches","seasonal","keyboard","southern","northern","decode","dehydrate","preseason","prearrange","idea",
-      "niece","belief","either","secret","money","reason","receive","chimney","breathe"
-    ],
-    "Chapter 5": [
-      "living","hospitals","stitch","fifteenth","picnic","sandwich","pillow","whichever","skillful","products","biscuit",
-      "mountains","comics","immature","picture","impossible","sincere","inland","difficult","invisible"
-    ]
+    'Chapter 1':[ 'atlas','travel','elastic','having','satisfy','candle','captain','pasture','manage','Canada','example','fantastic','scramble','hamburger','enough','because','absent','absolute','access','accurate' ],
+    'Chapter 2':[ 'raise','volcano','radio','straight','eighth','conveyed','Savior','neighborhood','survey','usually','weight','remember','nature','repaid','faithful','reweigh','contain','unable','disobey','unclaimed' ],
+    'Chapter 3':[ 'hotel','selfish','meant','breath','instead','several','leather','Mexico','protect','already','connect','pleasant','seventeen','everybody','music','during','envelope','entrance','expedition','exclamation' ],
+    'Chapter 4':[ 'enemies','beaches','seasonal','keyboard','southern','northern','decode','dehydrate','preseason','prearrange','idea','niece','belief','either','secret','money','reason','receive','chimney','breathe' ],
+    'Chapter 5':[ 'living','hospitals','stitch','fifteenth','picnic','sandwich','pillow','whichever','skillful','products','biscuit','mountains','comics','immature','picture','impossible','sincere','inland','difficult','invisible' ],
   };
-  // Chapter 6 = All Above (unique, preserve original casing per entry)
-  PREBUILT["Chapter 6 – All Above"] = Array.from(new Set(
-    Object.values(PREBUILT).flat()
-  ));
+  PREBUILT['Chapter 6 – All Above'] = Array.from(new Set(Object.values(PREBUILT).flat()));
 
-  const LS_KEY = "rotll_user_chapters_v1";
-
-  function loadUserChapters(){
-    try{ return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); }catch(e){ return {}; }
-  }
-  function saveUserChapters(obj){
-    localStorage.setItem(LS_KEY, JSON.stringify(obj));
-  }
-  function allChapters(){
-    return {...PREBUILT, ...loadUserChapters()};
-  }
-  function populateChapterSelect(){
-    const sel = $('chapterSelect');
-    sel.innerHTML = '<option value="">📕 Choose Chapter…</option>';
-    const chapters = allChapters();
-    Object.keys(chapters).sort().forEach(name=>{
-      const opt = document.createElement('option');
-      opt.value = name; opt.textContent = name + ' (' + chapters[name].length + ')';
-      sel.appendChild(opt);
-    });
-  }
-  populateChapterSelect();
-
-  $('btnLoadChapter').addEventListener('click', ()=>{
-    const name = $('chapterSelect').value;
-    if(!name){ alert('Choose a chapter first.'); return; }
-    const words = allChapters()[name] || [];
-    $('listBox').value = words.join('\n');
+  const chapterSel = $('#chapterSel');
+  Object.keys(PREBUILT).forEach(name=>{
+    const opt=document.createElement('option'); opt.value=name; opt.textContent=name; chapterSel.appendChild(opt);
+  });
+  $('#loadChapterBtn').addEventListener('click', ()=>{
+    const list = PREBUILT[chapterSel.value] || [];
+    $('#wordInput').value = list.join('\n');
+  });
+  $('#useWordsBtn').addEventListener('click', start);
+  $('#shuffleBtn').addEventListener('click', ()=>{
+    const words = $('#wordInput').value.split(/[\n,]+/).map(w=>w.trim()).filter(Boolean);
+    if(!words.length){ alert('Paste or load some words first.'); return; }
+    $('#wordInput').value = shuffle(words).join('\n');
   });
 
-  // Manage chapters import/export
-  function parseImport(text){
-    const out = {};
-    let current = null;
-    for(const rawLine of text.split(/\r?\n/)){
-      const line = rawLine.trim();
-      if(!line) continue;
-      const chMatch = line.match(/^(.+?):\s*(.+)$/);
-      if(chMatch){
-        const title = chMatch[1].trim();
-        const words = chMatch[2].split(/[ ,\t]+/).map(w=>w.trim()).filter(Boolean);
-        if(words.length){ out[title] = Array.from(new Set(words)); current = null; }
-        continue;
-      }
-      if(/chapter|unit|week|list|level/i.test(line)){
-        current = line;
-        if(!(current in out)) out[current] = [];
-        continue;
-      }
-      if(current){
-        line.split(/[ ,\t]+/).forEach(w=>{ if(w) out[current].push(w); });
-      }
-    }
-    Object.keys(out).forEach(k=>{
-      out[k] = Array.from(new Set(out[k].map(w=>w.trim()).filter(Boolean)));
-    });
-    return out;
-  }
-  $('btnImport').addEventListener('click', ()=>{
-    const text = $('importBox').value;
-    if(!text.trim()){ alert('Paste some chapters first.'); return; }
-    const parsed = parseImport(text);
-    if(Object.keys(parsed).length===0){ alert('I could not find any chapters. Please follow the examples.'); return; }
-    const curr = loadUserChapters();
-    const merged = {...curr};
-    for(const [name, list] of Object.entries(parsed)){ merged[name] = list; }
-    saveUserChapters(merged);
-    populateChapterSelect();
-    alert('Saved ' + Object.keys(parsed).length + ' chapter(s).');
-  });
-  $('btnExport').addEventListener('click', ()=>{
-    const mine = loadUserChapters();
-    if(Object.keys(mine).length===0){ alert('No saved chapters yet.'); return; }
-    const lines = [];
-    for(const [name, list] of Object.entries(mine)){
-      lines.push(name + ': ' + list.join(', '));
-    }
-    const blob = new Blob([lines.join('\n')], {type:'text/plain'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'my-chapters.txt';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url), 500);
-  });
-  $('btnClearChapters').addEventListener('click', ()=>{
-    if(confirm('Remove all saved chapters from this device? (Prebuilt chapters remain.)')){
-      localStorage.removeItem(LS_KEY);
-      populateChapterSelect();
-    }
-  });
+  // Speech (NOT muted by music toggle)
+  const speak = (text) => {
+    if (!$('#sayWords').checked) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.95; u.pitch = 1.0; u.lang = 'en-US';
+    try { speechSynthesis.cancel(); } catch(e) {}
+    speechSynthesis.speak(u);
+  };
 
-  // ---------- Audio unlock + SFX ----------
-  let unlocked = false;
-  let playedParchment = false;
-  function unlockOnce(){
-    if(unlocked) return;
-    unlocked = true;
-    try { (window.AudioContext||window.webkitAudioContext) && new (window.AudioContext||window.webkitAudioContext)().resume(); } catch(_){}
-    try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(_){}
-    if(!playedParchment){ playedParchment = true; sfx.parchment(); }
-  }
-  ['touchstart','pointerdown','mousedown','keydown','click'].forEach(evt=>{
-    window.addEventListener(evt, unlockOnce, {passive:true, once:true});
-  });
-
+  // WebAudio for SFX
   let audioCtx;
-  function ctx(){ return audioCtx || (audioCtx = new (window.AudioContext||window.webkitAudioContext)()); }
-  function tone(f=440,d=0.12,type='sine',vol=0.25){
-    const ac = ctx();
-    const o = ac.createOscillator(); const g = ac.createGain();
-    o.type=type; o.frequency.value=f; g.gain.value=vol;
-    o.connect(g); g.connect(ac.destination); o.start(); setTimeout(()=>o.stop(), d*1000);
-  }
-  function noise(dur=0.2, vol=0.2, loop=false){
-    const ac = ctx();
-    const len = Math.max(1, ac.sampleRate*dur)|0;
-    const buffer = ac.createBuffer(1, len, ac.sampleRate);
-    const data = buffer.getChannelData(0);
-    for(let i=0;i<data.length;i++){ data[i] = (Math.random()*2-1); }
-    const src = ac.createBufferSource(); src.buffer = buffer; src.loop = loop;
-    const filter = ac.createBiquadFilter();
-    filter.type='bandpass'; filter.frequency.value=1200; filter.Q.value=0.8;
-    const g = ac.createGain(); g.gain.value = vol;
-    src.connect(filter); filter.connect(g); g.connect(ac.destination);
-    return {src, g, filter, ac};
-  }
-  const sfx = {
-    coin(){ tone(900,.08,'square',.22); setTimeout(()=>tone(1350,.08,'square',.2),60); },
-    whoosh(){ tone(220,.05,'sine',.12); setTimeout(()=>tone(440,.06,'sine',.14),60); setTimeout(()=>tone(660,.08,'sine',.16),120); },
-    drum(){ const {src}=noise(.12,.22,false); src.start(); setTimeout(()=>{ try{src.stop();}catch(e){}},120); },
-    treasure(){
-      const seq = [392,523,659,784,988,1175,1319];
-      seq.forEach((f,i)=>setTimeout(()=>tone(f,.14,'triangle',.25), i*120));
-      setTimeout(()=>{ const {src}=noise(.25,.15,false); src.start(); setTimeout(()=>{ try{src.stop();}catch(e){}},250); }, seq.length*120 + 80);
-    },
-    parchment(){
-      const n = noise(.55, .22, false);
-      const t = n.ac.currentTime;
-      n.g.gain.setValueAtTime(0.0001, t);
-      n.g.gain.exponentialRampToValueAtTime(0.25, t+0.06);
-      n.g.gain.exponentialRampToValueAtTime(0.08, t+0.4);
-      try{ n.src.start(); }catch(e){}
-      setTimeout(()=>{ try{n.src.stop();}catch(e){} }, 600);
-    },
-    penLoop: null,
-    startPen(){
-      if(!this.penLoop){
-        const {src,g} = noise(0.3, 0.0, true);
-        this.penLoop = {src, g};
-        try{ src.start(); }catch(e){}
-      }
-      const ac = ctx();
-      this.penLoop.g.gain.cancelScheduledValues(ac.currentTime);
-      this.penLoop.g.gain.setTargetAtTime(0.18, ac.currentTime, 0.02);
-    },
-    stopPen(){
-      if(!this.penLoop) return;
-      const ac = ctx();
-      this.penLoop.g.gain.cancelScheduledValues(ac.currentTime);
-      this.penLoop.g.gain.setTargetAtTime(0.0, ac.currentTime, 0.05);
-    }
-  };
+  const ensureAudio = () => { if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); };
+  let audioMuted = false; // mutes MUSIC + SFX only
 
-  function maybeRandomSFX(){
-    const r = Math.random();
-    if(r < 0.25) sfx.coin();
-    else if(r < 0.45) sfx.whoosh();
-    else if(r < 0.6) sfx.drum();
+  function tone(freq=440, dur=0.12, type='sine', vol=0.2){
+    if(audioMuted) return;
+    ensureAudio(); const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    o.type=type; o.frequency.value=freq; g.gain.value=vol; o.connect(g); g.connect(audioCtx.destination);
+    o.start(); setTimeout(()=>o.stop(), dur*1000);
   }
+  function coin(){ tone(880,.07,'square',.22); setTimeout(()=>tone(1320,.08,'square',.20),60); }
+  function miss(){ tone(220,.12,'sawtooth',.18); setTimeout(()=>tone(180,.14,'sawtooth',.16),90); }
+  function fanfare(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.12,'triangle',.22), i*140)); }
 
-  // ---------- Music controls ----------
-  const bgm = $('bgm');
-  const musicState = $('musicState');
-  const btnMusic = $('btnMusic');
-  let musicOn = false; // start off (iOS safe)
+  // Pen scratch loop
+  let scratchNode=null, scratchGain=null;
+  function startScratch(){
+    if(audioMuted) return;
+    ensureAudio();
+    const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate*2, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0); for(let i=0;i<data.length;i++){ data[i] = (Math.random()*2-1)*0.2; }
+    scratchNode = audioCtx.createBufferSource(); scratchNode.buffer=buffer; scratchNode.loop=true;
+    scratchGain = audioCtx.createGain(); scratchGain.gain.value=0.25;
+    scratchNode.connect(scratchGain); scratchGain.connect(audioCtx.destination); scratchNode.start(0);
+  }
+  function stopScratch(){ if(scratchNode){ try{scratchNode.stop();}catch(e){} scratchNode.disconnect(); scratchGain.disconnect(); scratchNode=null; scratchGain=null; } }
 
-  function updateMusicUI(){
-    musicState.textContent = musicOn ? 'On' : 'Off';
-    btnMusic.textContent = (musicOn ? '🔊 Music' : '🔇 Music');
+  // Background music: try to autoplay; unlock on first gesture
+  const bgm = document.getElementById('bgm');
+  async function tryAutoplay(){
+    try{ if(!audioMuted){ await bgm.play(); } }catch(e){ /* iOS will block until a user gesture */ }
   }
-  async function setMusic(on){
-    musicOn = on;
-    updateMusicUI();
-    try {
-      if(musicOn){
-        await bgm.play();
-      } else {
-        bgm.pause();
-        bgm.currentTime = 0;
-      }
-    } catch(e){
-      // If play is blocked, user needs to interact (we already listen for first interaction above)
-    }
-  }
-  btnMusic.addEventListener('click', ()=> setMusic(!musicOn));
-  // After first user interaction, if they had toggled on before, try playing
-  window.addEventListener('pointerdown', ()=>{ if(musicOn) setMusic(true); }, {once:true});
+  document.addEventListener('DOMContentLoaded', tryAutoplay, {once:true});
+  const unlock = async () => { ensureAudio(); if(!audioMuted){ try{ await bgm.play(); }catch(e){} } document.removeEventListener('pointerdown', unlock); };
+  document.addEventListener('pointerdown', unlock);
 
-  // ---------- Map helpers ----------
-  const VIEW_W = 1000, VIEW_H = 260;
-  function svgScale(){
-    const svg = document.getElementById('map');
-    const w = svg.clientWidth || VIEW_W;
-    const h = svg.clientHeight || VIEW_H;
-    return { sx: w/VIEW_W, sy: h/VIEW_H };
-  }
-  let path, pathLength=1;
-  function initPath(){
-    path = document.getElementById('trail');
-    pathLength = path.getTotalLength ? path.getTotalLength() : 1000;
-    placeAtPercent($('chest'), 0.995);
-  }
-  function pointAt(p){
-    p = Math.max(0, Math.min(1, p));
-    const d = p * pathLength;
-    return path.getPointAtLength(d);
-  }
-  function placeAtPercent(el, p){
-    const pt = pointAt(p);
-    const {sx, sy} = svgScale();
-    el.style.left = (pt.x * sx) + 'px';
-    el.style.top  = (pt.y * sy) + 'px';
-  }
-  function setAvatarAtPercent(p){ placeAtPercent($('avatar'), p); }
-
-  function drawXMarks(n){
-    const layer = $('xLayer'); layer.innerHTML='';
-    if(n <= 0) return;
-    const {sx, sy} = svgScale();
-    for(let i=1;i<=n;i++){
-      const p = i/n;
-      const pt = pointAt(p);
-      const x = document.createElement('div');
-      x.className = 'x';
-      x.style.left = (pt.x * sx) + 'px';
-      x.style.top  = (pt.y * sy) + 'px';
-      layer.appendChild(x);
-    }
-  }
-
-  function landmarkSizePx(){
-    const avatar = document.getElementById('avatar');
-    const h = avatar.clientHeight || 72;
-    let base = Math.round(0.25 * h);
-    base = Math.round(base * 1.2);
-    const w = document.querySelector('.map-box').clientWidth || 800;
-    if (w > 1100) base = Math.min(base + 4, Math.round(0.33 * h));
-    return Math.max(14, base);
-  }
-  function tangentAt(p){
-    const delta = 0.002;
-    const p1 = pointAt(Math.max(0, p - delta));
-    const p2 = pointAt(Math.min(1, p + delta));
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    const len = Math.max(1e-6, Math.hypot(dx, dy));
-    return { tx: dx/len, ty: dy/len };
-  }
-  function normalAt(p){
-    const {tx, ty} = tangentAt(p);
-    return { nx: -ty, ny: tx };
-  }
-  function drawRandomLandmarks(n){
-    const layer = $('decorLayer'); layer.innerHTML = '';
-    const svgNS = "http://www.w3.org/2000/svg";
-    const iconIds = ['palm','pine','skull','fire','compass','rock','barrel','tent'];
-    const size = landmarkSizePx();
-    const {sx, sy} = svgScale();
-    const segments = Math.max(1, n);
-    let lastId = null;
-    for(let i=0;i<segments;i++){
-      const add = Math.random() < 0.75 ? 1 : 0;
-      for(let k=0;k<add;k++){
-        let id = iconIds[Math.floor(Math.random()*iconIds.length)];
-        if (id === lastId) { id = iconIds.filter(x=>x!==lastId)[Math.floor(Math.random()*(iconIds.length-1))]; }
-        lastId = id;
-        const startP = i/n;
-        const endP   = Math.min(1, (i+1)/n);
-        const p = startP + 0.18*(endP-startP) + Math.random() * 0.46*(endP - startP);
-        const base = pointAt(p);
-        const {nx, ny} = normalAt(p);
-        const side = Math.random() < 0.5 ? -1 : 1;
-        const mapW = document.querySelector('.map-box').clientWidth || 800;
-        const distBase = (mapW <= 430) ? 34 : (mapW > 900 ? 34 : 30);
-        const dist = distBase + Math.random()*14;
-        const dx = nx * dist * side;
-        const dy = ny * dist * side;
-        const el = document.createElementNS(svgNS, 'svg');
-        el.setAttribute('viewBox','-25 -25 50 50');
-        el.style.position = 'absolute';
-        el.style.width = size + 'px';
-        el.style.height = size + 'px';
-        const rot = (Math.random()*36 - 18);
-        el.style.left = ((base.x + dx) * sx) + 'px';
-        el.style.top  = ((base.y + dy) * sy) + 'px';
-        el.style.transform = `translate(-50%,-50%) rotate(${rot}deg)`;
-        el.style.opacity = 0.98;
-        el.innerHTML = `<use href="#${id}"></use>`;
-        layer.appendChild(el);
-      }
-    }
-  }
-
-  // ---------- Writing Canvas ----------
-  const canvas = $('writeCanvas');
-  const writeSection = $('writeSection');
-  const btnToggleWrite = $('btnToggleWrite');
-  const btnWriteToggleTop = $('btnWriteToggleTop');
-  const btnUndo = $('btnUndo');
-  const btnClear = $('btnClear');
-  let dpr = Math.max(1, window.devicePixelRatio || 1);
-  let ctx2d = canvas.getContext('2d');
-  let drawing = false;
-  let strokes = [];
-  let currentStroke = [];
-
-  function resizeCanvas(){
-    const rect = canvas.getBoundingClientRect();
-    const w = Math.max(300, Math.floor(rect.width));
-    const h = Math.max(140, Math.floor(rect.height));
-    canvas.width = Math.floor(w * dpr);
-    canvas.height = Math.floor(h * dpr);
-    ctx2d.setTransform(1,0,0,1,0,0);
-    redraw();
-  }
-  function redraw(){
-    ctx2d.setTransform(1,0,0,1,0,0);
-    ctx2d.clearRect(0,0,canvas.width,canvas.height);
-    ctx2d.save();
-    ctx2d.scale(dpr,dpr);
-    ctx2d.lineCap = 'round'; ctx2d.lineJoin='round';
-    ctx2d.lineWidth = 4; ctx2d.strokeStyle = '#3b2a15';
-    for(const s of strokes){
-      if(s.length<2) continue;
-      ctx2d.beginPath();
-      ctx2d.moveTo(s[0].x, s[0].y);
-      for(let i=1;i<s.length;i++){ ctx2d.lineTo(s[i].x, s[i].y); }
-      ctx2d.stroke();
-    }
-    ctx2d.restore();
-  }
-  function getPos(e){
-    const r = canvas.getBoundingClientRect();
-    const x = (e.clientX ?? (e.touches && e.touches[0].clientX)) - r.left;
-    const y = (e.clientY ?? (e.touches && e.touches[0].clientY)) - r.top;
-    return {x, y};
-  }
-  function startDraw(e){
-    drawing = true;
-    currentStroke = []; strokes.push(currentStroke);
-    const p = getPos(e); currentStroke.push(p);
-    sfx.startPen();
-  }
-  function moveDraw(e){ if(!drawing) return; currentStroke.push(getPos(e)); redraw(); }
-  function endDraw(){ if(!drawing) return; drawing=false; sfx.stopPen(); }
-  canvas.addEventListener('pointerdown', (e)=>{ canvas.setPointerCapture(e.pointerId); startDraw(e); });
-  canvas.addEventListener('pointermove', moveDraw);
-  canvas.addEventListener('pointerup', endDraw);
-  canvas.addEventListener('pointercancel', endDraw);
-  canvas.addEventListener('pointerleave', endDraw);
-  btnUndo.addEventListener('click', ()=>{ strokes.pop(); redraw(); });
-  btnClear.addEventListener('click', ()=>{ strokes = []; redraw(); sfx.drum(); });
-  function toggleWrite(){
-    const hidden = writeSection.classList.toggle('write-hidden');
-    btnToggleWrite.textContent = hidden ? 'Show' : 'Hide';
-  }
-  btnToggleWrite.addEventListener('click', toggleWrite);
-  btnWriteToggleTop.addEventListener('click', toggleWrite);
-
-  if(window.ResizeObserver){ new ResizeObserver(()=>resizeCanvas()).observe(canvas); }
-  else { window.addEventListener('resize', resizeCanvas); setTimeout(resizeCanvas, 300); }
-  window.addEventListener('orientationchange', ()=>setTimeout(resizeCanvas, 250));
-
-  // ---------- Game logic ----------
-  const normalize = s => s.toLowerCase().trim().replace(/[^a-z']/g,'');
-  let baseList = [];
-  let queue = [];
-  let total = 0;
-  let current = null;
-  let stats = {correct:0, wrong:0, attempts:0};
-  let stepIndex = 0;
-  let speakLock = false;
-
-  function repeats(){ return Math.max(0, stats.attempts - total); }
-  function parseList(text){
-    const parts = text.split(/[,\n]+/).map(s=>s.trim()).filter(Boolean);
-    const seen = new Set(); const out=[];
-    for(const raw of parts){
-      const key = raw.toLowerCase().trim();
-      if(!key || seen.has(key)) continue;
-      seen.add(key); out.push(raw);
-    }
-    return out;
-  }
-  function updateStats(){
-    $('statTotal').textContent = total;
-    $('statMastered').textContent = queue.filter(w=>w.mastered).length;
-    $('statCorrect').textContent = stats.correct;
-    $('statWrong').textContent = stats.wrong;
-    $('statRepeats').textContent = repeats();
-    const best = localStorage.getItem('treasure_best_repeats');
-    $('statBest').textContent = (best===null ? '—' : best);
-  }
-
-  function startRound(reshuffle=true){
-    initPath();
-    const list = reshuffle ? shuffle(baseList) : baseList.slice();
-    queue = list.map(raw => ({raw, key:normalize(raw), mastered:false}));
-    total = queue.length;
-    stats = {correct:0, wrong:0, attempts:0};
-    stepIndex = 0;
-    $('answer').value = '';
-    $('feedback').textContent='';
-    $('feedback').className='';
-    drawXMarks(total);
-    drawRandomLandmarks(total);
-    updateStats();
-    setAvatarAtPercent(0);
-    next(true);
-  }
-  function next(autoSpeak=false){
-    while(queue.length && queue[0].mastered) queue.shift();
-    if(queue.length === 0){ return finish(); }
-    current = queue[0];
-    if(autoSpeak && !speakLock){
-      speakLock = true;
-      speak(current.raw);
-      setTimeout(()=>{ speakLock=false; }, 500);
-    }
-    $('answer').focus();
-  }
-  function submit(){
-    if(!current) return;
-    const val = normalize($('answer').value);
-    if(!val) return;
-    stats.attempts++;
-    if(val === current.key){
-      current.mastered = true;
-      stats.correct++;
-      $('feedback').textContent = `✅ Correct: ${current.raw}`;
-      $('feedback').className = 'good';
-      maybeRandomSFX();
-      stepIndex = Math.min(total, stepIndex + 1);
-      setAvatarAtPercent(stepIndex/total);
-      queue.shift();
-      updateStats();
-      $('answer').value = '';
-      strokes = []; redraw();
-      next(true);
-    } else {
-      stats.wrong++;
-      $('feedback').textContent = `❌ Oops. The word was “${current.raw}”. We'll try it again soon.`;
-      $('feedback').className = 'bad';
-      sfx.drum();
-      queue.shift();
-      const insertAt = Math.min(3, queue.length);
-      queue.splice(insertAt, 0, current);
-      updateStats();
-      $('answer').value = '';
-      next(true);
-    }
-  }
-  function finish(){
-    setAvatarAtPercent(1);
-    const score = repeats();
-    const key='treasure_best_repeats';
-    const currBest = localStorage.getItem(key);
-    if(currBest===null || score < Number(currBest)){ localStorage.setItem(key, String(score)); }
-    $('statBest').textContent = localStorage.getItem(key);
-    $('feedback').innerHTML = `🎉 You found the treasure! Repeats (score): <b>${score}</b>. Best: <b>${localStorage.getItem(key)}</b>.`;
-    confettiBurst(80);
-    sfx.treasure();
-    chestSparkle();
-  }
-
-  // Events
-  $('btnUseList').addEventListener('click', ()=>{
-    const text = $('listBox').value;
-    const parsed = parseList(text);
-    if(parsed.length === 0){ alert('Please paste at least one word or load a chapter.'); return; }
-    baseList = parsed;
-    startRound(true);
+  $('#musicBtn').addEventListener('click', ()=>{
+    audioMuted = !audioMuted;
+    if(audioMuted){ bgm.pause(); $('#musicBtn').textContent = '🔇 Music & SFX'; }
+    else { bgm.play().catch(()=>{}); $('#musicBtn').textContent = '🔊 Music & SFX'; }
   });
-  $('btnHuntAgain').addEventListener('click', ()=>{
-    if(baseList.length === 0){ alert('Paste a word list first or load a chapter.'); return; }
-    startRound(true);
-  });
-  $('btnHear').addEventListener('click', ()=>{ if(current){ unlockOnce(); speak(current.raw); } });
-  $('answer').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ submit(); }});
-  $('btnMark').addEventListener('click', submit);
-  document.getElementById('mapBox').addEventListener('pointerdown', ()=>{ $('answer').focus(); });
-
-  // Best score init
-  const best = localStorage.getItem('treasure_best_repeats');
-  $('statBest').textContent = (best===null ? '—' : best);
-
-  // Resize recalculations
-  window.addEventListener('resize', ()=>{
-    drawXMarks(total || 0);
-    drawRandomLandmarks(total || 0);
-    setAvatarAtPercent(stepIndex/(total||1));
-    placeAtPercent($('chest'), 0.995);
-    populateChapterSelect();
-  });
-
-  // Speech synthesis
-  function speak(text){
-    try{
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = 0.95; u.pitch = 1.0; u.lang = 'en-US';
-      window.speechSynthesis.speak(u);
-    }catch(e){}
-  }
 
   // Confetti
-  function confettiBurst(n=60){
-    const layer = $('confetti');
-    for(let i=0;i<n;i++){
-      const el = document.createElement('i');
-      el.style.left = Math.random()*100 + 'vw';
-      el.style.background = ['gold','#d4af37','#ffd54a','#f5c36b'][i%4];
-      el.style.animationDelay = (Math.random()*0.25)+'s';
-      el.style.transform = `translateY(${Math.random()*-40}px) rotate(${Math.random()*180}deg)`;
-      layer.appendChild(el);
-      setTimeout(()=>layer.removeChild(el), 1600);
+  function confetti(n=60){ const layer=$('#confetti'); for(let i=0;i<n;i++){ const el=document.createElement('i'); el.style.position='absolute'; el.style.width='10px'; el.style.height='10px'; el.style.left=Math.random()*100+'vw'; el.style.background=['gold','#e0b85a','#ffd54a','#f5c36b'][i%4]; el.style.opacity='0.9'; el.style.transition='transform 1.2s ease, opacity 1.2s ease'; layer.appendChild(el); setTimeout(()=>{ el.style.transform='translateY(120vh) rotate(720deg)'; el.style.opacity='0'; }, 10); setTimeout(()=>layer.removeChild(el), 1400); } }
+
+  // Game State
+  let queue=[], current=null, total=0;
+  let stats={correct:0, wrong:0, attempts:0};
+  let xPositions=[];
+  let path, pathLength=1;
+
+  const repeats = () => Math.max(0, stats.attempts - total);
+
+  function parseWords(text){
+    const parts=text.split(/[\n,]+/).map(w=>w.trim()).filter(Boolean);
+    const seen=new Set(); const list=[];
+    for(const raw of parts){ const key=normalize(raw); if(!key||seen.has(key)) continue; seen.add(key); list.push({raw,key,mastered:false}); }
+    return list;
+  }
+
+  function start(){
+    const raw=$('#wordInput').value;
+    const words=parseWords(raw);
+    if(!words.length){ alert('Please enter or load at least one word.'); return; }
+    queue = shuffle(words.slice());
+    total = queue.length; stats={correct:0,wrong:0,attempts:0};
+
+    $('#statTotal').textContent = `Words: ${total}`;
+    $('#statMastered').textContent = `Mastered: 0`;
+    $('#statMasteredPlay').textContent = `Mastered: 0/${total}`;
+    $('#statCorrect').textContent = 'Correct: 0';
+    $('#statWrong').textContent = 'Wrong: 0';
+    $('#statRepeats').textContent = `Repeats: 0`;
+    const best = localStorage.getItem('treasure_best_repeats'); $('#statBest').textContent = `Personal Best: ${best!==null?best:'—'}`;
+
+    $('#setup').classList.add('hidden'); $('#results').classList.add('hidden'); $('#play').classList.remove('hidden');
+
+    path = document.getElementById('trail'); pathLength = path.getTotalLength? path.getTotalLength() : 1000;
+    placeXMarks(total); placeLandmarks(total); placeChest(); updateAvatarToIndex(0);
+    next();
+  }
+
+  function masteredCount(){ return queue.filter(w=>w.mastered).length; }
+
+  function next(){
+    while(queue.length && queue[0].mastered) queue.shift();
+    if(queue.length===0){ finish(); return; }
+    current = queue[0];
+    $('#answer').value='';
+    $('#answer').focus();
+    speak(current.raw);
+  }
+
+  function submit(){
+    if(!current) return;
+    const val = normalize($('#answer').value);
+    if(!val) return;
+    stats.attempts++;
+
+    if(val===current.key){
+      current.mastered=true; stats.correct++;
+      $('#statCorrect').textContent = `Correct: ${stats.correct}`;
+      const mastered = masteredCount();
+      $('#statMasteredPlay').textContent = `Mastered: ${mastered}/${total}`;
+      $('#statMastered').textContent = `Mastered: ${mastered}`;
+      $('#avatar').classList.remove('shake'); $('#avatar').classList.add('bounce'); coin();
+      updateAvatarToIndex(mastered);
+      queue.shift();
+      setTimeout(()=>{ $('#avatar').classList.remove('bounce'); next(); }, 350);
+    } else {
+      stats.wrong++; $('#statWrong').textContent = `Wrong: ${stats.wrong}`; $('#avatar').classList.remove('bounce'); $('#avatar').classList.add('shake'); miss();
+      queue.shift(); const insertAt = Math.min(3, queue.length); queue.splice(insertAt,0,current);
+      $('#statRepeats').textContent = `Repeats: ${repeats()}`;
+      setTimeout(()=>$('#avatar').classList.remove('shake'), 360);
+      setTimeout(next, 420);
     }
   }
 
-  // Sparkles
-  function chestSparkle(){
-    const layer = $('sparkles');
-    const chest = $('chest');
-    const rect = chest.getBoundingClientRect();
-    const mapRect = chest.parentElement.getBoundingClientRect();
-    function spawnOne(){
-      const s = document.createElement('div');
-      s.className = 'sparkle';
-      const cx = rect.left - mapRect.left + rect.width/2;
-      const cy = rect.top - mapRect.top + rect.height/2;
-      const r = 48 * Math.random();
-      const angle = Math.random()*Math.PI*2;
-      s.style.left = (cx + r*Math.cos(angle)) + 'px';
-      s.style.top  = (cy + r*Math.sin(angle)) + 'px';
-      s.style.animationDelay = (Math.random()*0.35)+'s';
-      layer.appendChild(s);
-      setTimeout(()=>{ if(s.parentNode) s.parentNode.removeChild(s); }, 1500);
-    }
-    for(let i=0;i<20;i++) spawnOne();
-    setTimeout(()=>{ for(let i=0;i<16;i++) spawnOne(); }, 300);
+  function hint(){ if(!current) return; const first=current.raw[0]; alert(`Hint: starts with “${first}”`); }
+  function skip(){ if(!current) return; queue.shift(); queue.splice(Math.min(3, queue.length), 0, current); setTimeout(next, 260); }
+  function finish(){
+    updateAvatarToIndex(total-1); fanfare(); confetti(90);
+    $('#play').classList.add('hidden'); $('#results').classList.remove('hidden');
+    const rpt = repeats();
+    $('#summary').innerHTML = `Words: <b>${total}</b> · Correct: <b>${stats.correct}</b> · Wrong: <b>${stats.wrong}</b><br><b>Repeats (score): ${rpt}</b> — lower is better!`;
+    const key='treasure_best_repeats'; const curr = localStorage.getItem(key);
+    if(curr===null || rpt < Number(curr)){ localStorage.setItem(key, String(rpt)); $('#bestNote').innerHTML = `🏆 New personal best! Your best “fewest repeats” is now <b>${rpt}</b>.`; }
+    else { $('#bestNote').innerHTML = `Best to beat: <b>${curr}</b> repeats. Try to beat it next round!`; }
+    $('#statBest').textContent = `Personal Best: ${localStorage.getItem(key)}`;
   }
 
-  // Initialize canvas size once DOM ready
-  setTimeout(()=>{ const evt = new Event('resize'); window.dispatchEvent(evt); }, 50);
+  // Map helpers
+  function getPointAtFrac(fr){ const d=Math.max(0,Math.min(1,fr))*pathLength; return path.getPointAtLength(d); }
+  function getNormalAtFrac(fr){
+    const d=Math.max(0,Math.min(1,fr))*pathLength; const p1=path.getPointAtLength(Math.max(0,d-1)); const p2=path.getPointAtLength(Math.min(pathLength,d+1));
+    const dx=p2.x-p1.x, dy=p2.y-p1.y, len=Math.hypot(dx,dy)||1; return {nx:-dy/len, ny:dx/len};
+  }
+  let xPositions=[];
+  function placeXMarks(n){
+    Array.from(document.querySelectorAll('.xmark')).forEach(el=>el.remove());
+    xPositions=[]; if(n<=0) return;
+    for(let i=0;i<n;i++){ const fr=(i)/(n); xPositions.push(fr); const pt=getPointAtFrac(fr);
+      const el=document.createElement('div'); el.className='xmark'; el.textContent='❌'; el.style.left=pt.x+'px'; el.style.top=pt.y+'px'; $('#mapWrap').appendChild(el);
+    }
+  }
+  function placeChest(){ const pt=getPointAtFrac(0.995); const chest=$('#chest'); chest.style.left=pt.x+'px'; chest.style.top=pt.y+'px'; }
+  function updateAvatarToIndex(idx){ const i=Math.max(0,Math.min(idx,xPositions.length-1)); const pt=getPointAtFrac(xPositions[i]); const av=$('#avatar'); av.style.left=pt.x+'px'; av.style.top=pt.y+'px'; }
+  const LANDMARK_POOL=['🌴','🌲','☠️','🔥','🧭','🪨','🛢️','⛺','🪙','🛶'];
+  function placeLandmarks(n){
+    Array.from(document.querySelectorAll('.landmark')).forEach(el=>el.remove()); if(n<=1) return;
+    const avatarH = $('#avatar').getBoundingClientRect().height||60; const baseSize=Math.round(avatarH*0.25);
+    let prev=null;
+    for(let i=0;i<n-1;i++){
+      let type=LANDMARK_POOL[Math.floor(Math.random()*LANDMARK_POOL.length)];
+      if(type===prev) type=LANDMARK_POOL[(LANDMARK_POOL.indexOf(type)+1)%LANDMARK_POOL.length];
+      prev=type;
+      const mid=(xPositions[i]+xPositions[i+1])/2; const pt=getPointAtFrac(mid); const normal=getNormalAtFrac(mid); const offset=36+Math.round(Math.random()*16);
+      const el=document.createElement('div'); el.className='landmark'; el.textContent=type;
+      const bump=(window.innerWidth>1000?1.15:window.innerWidth<420?0.95:1.0); const size=Math.min(28, Math.round(baseSize*bump*1.2));
+      el.style.left=(pt.x+normal.nx*offset)+'px'; el.style.top=(pt.y+normal.ny*offset)+'px'; el.style.fontSize=size+'px'; el.style.rotate=((Math.random()*36-18).toFixed(1)+'deg');
+      $('#mapWrap').appendChild(el);
+    }
+  }
 
-  ready('Ready');
-})();</script>
+  // Practice canvas (CSS-pixel math)
+  const canvas=$('#canvas'); const ctx=canvas.getContext('2d'); let strokes=[]; let drawing=false; let dpr=1;
+  function resizeCanvas(){ const r=canvas.getBoundingClientRect(); dpr=window.devicePixelRatio||1; canvas.width=Math.floor(r.width*dpr); canvas.height=Math.floor(r.height*dpr); redraw(); }
+  function toCanvasPoint(e){ const r=canvas.getBoundingClientRect(); return {x:(e.clientX-r.left), y:(e.clientY-r.top)}; }
+  function redraw(){ ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,canvas.width,canvas.height); ctx.save(); ctx.scale(dpr,dpr); ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#ead7a1'; ctx.lineWidth=3.5; for(const s of strokes){ ctx.beginPath(); for(let i=0;i<s.length;i++){ const p=s[i]; if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);} ctx.stroke(); } ctx.restore(); }
+  function down(e){ ensureAudio(); if(!audioMuted) startScratch(); drawing=true; const p=toCanvasPoint(e); strokes.push([p]); redraw(); }
+  function move(e){ if(!drawing) return; const p=toCanvasPoint(e); strokes[strokes.length-1].push(p); redraw(); }
+  function up(){ drawing=false; stopScratch(); }
+  canvas.addEventListener('pointerdown', e=>{ e.preventDefault(); canvas.setPointerCapture(e.pointerId); down(e); });
+  canvas.addEventListener('pointermove', e=>{ if(!drawing) return; e.preventDefault(); move(e); });
+  canvas.addEventListener('pointerup', e=>{ e.preventDefault(); up(); });
+  canvas.addEventListener('pointercancel', up);
+  $('#undoBtn').addEventListener('click', ()=>{ strokes.pop(); redraw(); });
+  $('#clearBtn').addEventListener('click', ()=>{ strokes=[]; redraw(); });
+
+  // Buttons & interactions
+  function submit(){ /* defined later but used by events above */ }
+  $('#submitBtn').addEventListener('click', submit);
+  $('#answer').addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
+  $('#hearBtn').addEventListener('click', ()=>{ if(current) speak(current.raw); });
+  $('#hintBtn').addEventListener('click', ()=>{ if(!current) return; const first=current.raw[0]; alert(`Hint: starts with “${first}”`); });
+  $('#skipBtn').addEventListener('click', ()=>{ if(!current) return; queue.shift(); queue.splice(Math.min(3, queue.length), 0, current); setTimeout(next, 260); });
+  $('#endBtn').addEventListener('click', ()=>{ updateAvatarToIndex(total-1); fanfare(); confetti(90); $('#play').classList.add('hidden'); $('#results').classList.remove('hidden'); });
+  $('#restartBtn').addEventListener('click', ()=>{ $('#results').classList.add('hidden'); $('#setup').classList.remove('hidden'); });
+  $('#editBtn').addEventListener('click', ()=>{ $('#results').classList.add('hidden'); $('#setup').classList.remove('hidden'); });
+  $('#togglePracticeBtn').addEventListener('click', ()=>{ const w=$('#practiceWrap'); w.classList.toggle('hidden'); });
+
+  $$('button').forEach(btn=>{ btn.setAttribute('type','button'); btn.style.touchAction='manipulation'; btn.addEventListener('keydown', e=>{ if(e.key===' ') e.preventDefault(); }); });
+
+  $('#mapWrap').addEventListener('click', ()=>$('#answer').focus());
+
+  function relayout(){ resizeCanvas(); if($('#play').classList.contains('hidden')) return; placeXMarks(total); placeLandmarks(total); placeChest(); const mastered=masteredCount(); updateAvatarToIndex(mastered); }
+  window.addEventListener('resize', ()=>{ clearTimeout(window.__rsz); window.__rsz=setTimeout(relayout,120); });
+  window.addEventListener('orientationchange', ()=>{ setTimeout(relayout,150); });
+
+  setTimeout(resizeCanvas, 50);
+  const best = localStorage.getItem('treasure_best_repeats'); $('#statBest').textContent = `Personal Best: ${best!==null?best:'—'}`;
+
+  // Re-define submit now (after helpers exist)
+  function submit(){
+    if(!current) return;
+    const val = normalize($('#answer').value);
+    if(!val) return;
+    stats.attempts++;
+
+    if(val===current.key){
+      current.mastered=true; stats.correct++;
+      $('#statCorrect').textContent = `Correct: ${stats.correct}`;
+      const mastered = masteredCount();
+      $('#statMasteredPlay').textContent = `Mastered: ${mastered}/${total}`;
+      $('#statMastered').textContent = `Mastered: ${mastered}`;
+      $('#avatar').classList.remove('shake'); $('#avatar').classList.add('bounce'); coin();
+      updateAvatarToIndex(mastered);
+      queue.shift();
+      setTimeout(()=>{ $('#avatar').classList.remove('bounce'); next(); }, 350);
+    } else {
+      stats.wrong++; $('#statWrong').textContent = `Wrong: ${stats.wrong}`; $('#avatar').classList.remove('bounce'); $('#avatar').classList.add('shake'); miss();
+      queue.shift(); const insertAt = Math.min(3, queue.length); queue.splice(insertAt,0,current);
+      $('#statRepeats').textContent = `Repeats: ${repeats()}`;
+      setTimeout(()=>$('#avatar').classList.remove('shake'), 360);
+      setTimeout(next, 420);
+    }
+  }
+})();
+</script>
 </body>
 </html>
